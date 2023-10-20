@@ -1,4 +1,22 @@
-# Galactic Conquest
+# Galactic Empire
+
+This project is an open-source recreation/extension of a classic Mac shareware game (also called Galactic Empire) by Cary Torkelson.  See _Playing the Original_ below for more information on that.
+
+# Playing the Game
+
+This is a project for [Mini Micro](https://miniscript.org/MiniMicro).  You can try it out with these steps:
+
+1. Download [Mini Micro](https://miniscript.org/MiniMicro), if you don't have it already.  The first time you launch it, you may need to right-click and tell your OS to calm down (as the application is not currently code-signed).
+
+2. Clone or download this repo to your local hard drive.
+
+3. In Mini Micro, mount the folder containing this README and the various .ms (MiniScript) files.
+
+4. At the Mini Micro prompt, type:
+```
+load "main"
+run
+```
 
 
 # Playing the Original
