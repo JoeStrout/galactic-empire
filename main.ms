@@ -76,6 +76,7 @@ attack = function
 	fleet.mannedTransports = dlog.groundForces[0]
 	if dlog.winner == 0 then	// empire won
 		targetPlanet.status = planet.OCCUPIED
+		targetPlanet.occupiedOn = empire.year
 		galaxyMap.drawPlanet targetPlanet, mouseOverPlanet == targetPlanet
 		targetPlanet.spaceForces = 0
 		targetPlanet.groundForces = 0
@@ -84,6 +85,23 @@ attack = function
 		targetPlanet.spaceForces = dlog.spaceForces[1]
 		targetPlanet.groundForces = dlog.groundForces[1]
 	end if
+	infoDisplay.drawAll
+end function
+
+occupy = function
+	if targetPlanet != fleet.planet or targetPlanet.status != planet.OCCUPIED then return
+	// for now, increase occupation forces by 25 at a time (hold Alt to use fighters)
+	qtyGround = 0; qtySpace = 0
+	if key.pressed("left alt") or key.pressed("right alt") then
+		qtySpace = mathUtil.min(25, fleet.fighters)
+	else
+		qtyGround = mathUtil.min(25, fleet.mannedTransports)
+	end if
+	if qtyGround + qtySpace == 0 then return
+	targetPlanet.groundForces += qtyGround
+	fleet.mannedTransports -= qtyGround
+	targetPlanet.spaceForces += qtySpace
+	fleet.fighters -= qtySpace
 	infoDisplay.drawAll
 end function
 

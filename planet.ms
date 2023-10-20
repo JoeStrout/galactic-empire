@@ -39,6 +39,8 @@ Planet.troops = Resource.make("Military")
 Planet.fuel = Resource.make("Mining")
 Planet.spaceForces = 0		// space forces (defending or occupying)
 Planet.groundForces = 0		// ground forces (defending or occupying)
+Planet.conqueredOn = null	// turn on which it was conquered
+Planet.joinedOn = null		// turn on which it joined the empire
 
 Planet.hasIndustry = function; return self.tech > 2; end function
 Planet.hasFuel = function; return self.tech > 1; end function
@@ -58,12 +60,48 @@ Planet.calcProduction = function
 end function
 
 Planet.advanceTime = function(years)
+	// grow population
 	growthRate = 1.01	// ToDo: vary this based on allocations, etc.
 	self.population *= growthRate^years
+	
+	// produce resources
 	for res in [self.supplies, self.credits, self.shipParts, self.troops, self.fuel]
 		res.amount += res.production * years
 	end for
-	// ToDo: if occupied, battle occupation forces or give up and join the empire
+	
+	// If independent, grow military forces;
+	// if occupied, battle occupation forces or give up and join the empire.
+	// Exact rules for this are TBD; below is a placeholder for now.
+	if self.status == INDEPENDENT then
+		if self.hasIndustry then self.spaceForces += round(years * rnd * 0.5)
+		self.groundForces += round(years * rnd * 0.8)
+	else if self.status == OCCUPIED then
+		self.spaceForces = mathUtil.max(0, self.spaceForces - round(years * rnd * 3))
+		self.groundForces = mathUtil.max(0, self.groundForces - round(years * rnd))
+		if self.spaceForces == 0 and self.groundForces == 0 and rnd > 0.5^years then
+			self.rebel
+		else if empire.year - self.conqueredOn > 20 then
+			self.joinEmpire
+		end if
+	end if
+end function
+
+// Shake off our occupation and become independent again.
+Planet.rebel = function
+	self.status = INDEPENDENT
+	galaxyMap.drawPlanet self
+//	infoDisplay.drawAll
+end function
+
+// Join the glorious Empire.
+Planet.joinEmpire = function
+	self.status = EMPIRE
+	self.joinedOn = empire.year
+	galaxyMap.drawPlanet self
+	for res in [self.supplies, self.credits, self.shipParts, self.troops, self.fuel]
+		res.amount = 0
+	end for
+	infoDisplay.drawAll
 end function
 
 availableNames = ("Alhambra Bok Drassa Eventide Farside Harkon Javiny Kgolta Llythll" +

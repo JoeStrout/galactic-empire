@@ -254,6 +254,7 @@ addTargetButtons = function(left, y, width)
 	targetButtons.build.action = @buildShips
 	targetButtons.supply.action = @buySupplies
 	targetButtons.fuel.action = @buyFuel
+	targetButtons.occupy.action = @occupy
 	targetButtons.attack.action = @attack
 end function
 
