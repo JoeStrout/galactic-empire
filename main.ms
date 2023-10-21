@@ -198,6 +198,7 @@ updateMap = function
 			outer.mouseUpTime = time
 		end if
 	end if
+	if mouse.button and mouse.x > galaxyMap.width then infoDisplay.handleClick
 end function
 
 galaxyMap.draw

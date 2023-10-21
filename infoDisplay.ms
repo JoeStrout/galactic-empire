@@ -58,6 +58,13 @@ drawLabeledField = function(left, top, width, label, value, valid=true)
 	font.printRight value, left+width, y, 1, infoColor * valid + invalidColor * (not valid)
 end function
 
+printUnderlined = function(s, x, y)
+	w = font.width(s)
+	y -= 10
+	font.print s, x, y, 1, labelColor
+	g.line x, y-2, x+w, y-2, labelColor
+end function
+
 printUnderlinedCenter = function(s, x, y)
 	w = font.width(s)
 	left = round(x - w/2)
@@ -264,6 +271,58 @@ hideTargetButtons = function
 		end for
 end function
 
+drawAllocations = function
+	p = targetPlanet
+	y = allocTop
+	lineHeight = 16
+	allocWidth = allocRight - allocLeft
+	for res in p.resources
+		gfx.fillRect allocLeft, y-lineHeight, allocWidth + 30, lineHeight, color.black
+		if (res.name == "Industry" and not p.hasIndustry) or
+		   (res.name == "Mining" and not p.hasFuel) then
+			font.print "N/A", allocLeft, y-10, 1, color.gray
+		else
+			barW = round(allocWidth * res.allocation / 80)
+			gfx.fillRect allocLeft, y-10, barW, 10, infoColor
+			font.print round(res.allocation) + "%", allocLeft + barW + 2, y-10, 1, infoColor
+		end if
+		y -= lineHeight
+	end for
+end function
+
+adjustAllocations = function
+	if not (allocLeft <= mouse.x <= allocRight) then return
+	p = targetPlanet
+	lineHeight = 16
+	allocWidth = allocRight - allocLeft
+	idx = floor((allocTop - mouse.y) / lineHeight)
+	if not (0 <= idx <= 4) then return
+	
+	minAllowed = 10
+	maxAllowed = 80
+	if p.hasIndustry then maxAllowed -= 10
+	if p.hasFuel then maxAllowed -= 10
+	
+	while mouse.button		
+		yield
+		newAlloc = round(80 * (mouse.x - allocLeft) / allocWidth)
+		if newAlloc < minAllowed then newAlloc = minAllowed
+		if newAlloc > maxAllowed then newAlloc = maxAllowed
+		if newAlloc == p.resources[idx].allocation then continue
+		p.setAllocation idx, newAlloc
+		drawAllocations
+	end while
+end function
+
+handleClick = function
+	if mouse.y < allocTop and mouse.y > allocTop - 16*5 then
+		// handle a click in the allocation area, if allowed
+		if targetPlanet.status == planet.EMPIRE then adjustAllocations
+	end if
+	// ...if none of the above apply, then just block until mouse-up
+	while mouse.button; yield; end while
+end function
+
 drawTargetInfo = function
 	p = targetPlanet
 	isLocal = (targetPlanet == fleet.planet)
@@ -309,47 +368,30 @@ drawTargetInfo = function
 	
 	drawHeader leftColLeft, y, infoWidth, "Resource Allocation and Information"
 	y -= lineHeight
-	x0 = leftColLeft + infoWidth * 0.25
-	x1 = leftColLeft + infoWidth * 0.40
-	x2 = leftColLeft + infoWidth * 0.65
-	x3 = leftColLeft + infoWidth * 0.90
+	x0 = leftColLeft + infoWidth * 0.22
+	x1 = leftColLeft + infoWidth * 0.25
+	x2 = leftColLeft + infoWidth * 0.72
+	x3 = leftColLeft + infoWidth * 0.93
 	printUnderlinedRight "Resource", x0, y
-	printUnderlinedCenter "Allocation", x1, y
+	printUnderlined "Allocation", x1, y
 	printUnderlinedCenter "Production", x2, y
 	printUnderlinedCenter "Current", x3, y
 	y -= lineHeight
-	for res in [p.supplies, p.credits, p.shipParts, p.troops, p.fuel]
+	outer.allocTop = y
+	outer.allocLeft = x1
+	outer.allocRight = x2 - 40
+	for res in p.resources
 		c = infoColor
 		if (res.name == "Industry" and not p.hasIndustry) or
 		   (res.name == "Mining" and not p.hasFuel) then c = color.gray
 		font.printRight res.name, x0, y-10, 1, c
-		font.printCentered round(res.allocation) + "%", x1, y-10, 1, c
+		//font.print round(res.allocation) + "%", x1, y-10, 1, c
 		font.printCentered round(res.production), x2, y-10, 1, c
 		font.printCentered round(res.amount), x3, y-10, 1, c
 		y -= lineHeight
 	end for
+	drawAllocations
 	
-	// At the bottom of this panel: if it's not the planet we're orbiting
-	// then draw trip info.  If it is, then draw Military Strength (with
-	// fields for Space Forces and Ground Forces) if Independent, or
-	// Or Occupation Strength (if Occupied).  Not sure why the occupation
-	// strength is unknown when it's a planet I'm occupying, and I am there.
-	// In the original game this info requires 3 spy satellites, but you
-	// can also get it by just clicking the "occupation forces" button,
-	// so this seems dumb (at least for the local planet).
-	// But what to draw here if it's an Empire planet?  The original game
-	// drew a planet status summary, but we have that up top.  Hmm.
-	// Maybe "Imperial History" (date occupied and joined)?  Or some sort
-	// of color, "Known For" or something?
-	// Bigger problem: we may want to see Occupation Strength for planets
-	// that are not local.  Right now, we have no way to show that since
-	// we use this area for Fleet Trip Info instead.
-	// So, drat.  May need to add an extra header and row here.
-	// OR, hide the buttons for remote planets, since they only apply to the
-	// local planet. But then stuff moves around, which isn't ideal.  Hmm.
-	// Maybe we put fleet trip info (without a header) at the top for remote
-	// planets, using exactly the same vertical space as the buttons for 
-	// the local planet.  Everything else remains stable.  That could work.
 	if p.status == planet.EMPIRE then
 		drawHeader leftColLeft, y, infoWidth, "Imperial History"
 		y -= lineHeight

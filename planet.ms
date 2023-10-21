@@ -59,13 +59,47 @@ Planet.calcProduction = function
 	self.fuel.calcProduction      self.population, 0.0175
 end function
 
+Planet.setAllocation = function(resIndex, newPercent)
+	// Set the given resource to the given percent (0-100); adjust all
+	// others so that the sum is still 100.
+	allocs = []
+	for res in self.resources
+		allocs.push res.allocation
+	end for
+	allocs[resIndex] = newPercent
+	extra = allocs.sum - 100
+//	text.clear; text.row = 25; print "extra: " + extra
+	if extra then
+		divisor = self.resources.len - 1
+		if not self.hasIndustry then divisor -= 1
+		if not self.hasFuel then divisor -= 1
+		// loop over all allocations, starting at a random point
+		i = floor(allocs.len * rnd)
+		while extra
+			if allocs[i] != 0 and i != resIndex then
+				delta = -extra / divisor
+				if delta > 0 then delta = ceil(delta) else delta = floor(delta)
+//				print "#" + i + ": -" + extra + "/" + divisor + " = delta: " + delta
+				if allocs[i] + delta < 10 then delta = 10 - allocs[i]
+				allocs[i] += delta
+				extra += delta
+				if divisor > 1 then divisor -= 1
+			end if
+			i = (i + 1) % allocs.len
+		end while
+	end if
+	for i in allocs.indexes
+		self.resources[i].allocation = allocs[i]
+	end for
+end function
+
 Planet.advanceTime = function(years)
 	// grow population
 	growthRate = 1.01	// ToDo: vary this based on allocations, etc.
 	self.population *= growthRate^years
 	
 	// produce resources
-	for res in [self.supplies, self.credits, self.shipParts, self.troops, self.fuel]
+	for res in self.resources
 		res.amount += res.production * years
 	end for
 	
@@ -147,7 +181,8 @@ Planet.makeGalactica = function
 	p.troops = Resource.make(p.troops.name, 20)
 	p.fuel = Resource.make(p.fuel.name, 20)
 	p.shipParts = Resource.make(p.shipParts.name, 20)
-
+	p.resources = [p.supplies, p.credits, p.shipParts, p.troops, p.fuel]
+	
 	return p
 end function
 
@@ -189,6 +224,7 @@ Planet.makeRandom = function
 	p.shipParts = Resource.make(p.shipParts.name, r[4])
 	if p.hasIndustry then p.spaceForces = 10 + round(p.population*2*rnd)
 	p.groundForces = 10 + round(p.population*3*rnd)
+	p.resources = [p.supplies, p.credits, p.shipParts, p.troops, p.fuel]
 	return p
 end function
 
