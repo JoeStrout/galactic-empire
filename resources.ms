@@ -20,6 +20,6 @@ buttonIcons = function
 end function
 
 buttonNames = ["Collect Taxes", "Enlist Troops", "Build Ships", "Buy Supplies",
-	"Buy Fuel", "Resource Allocation", "Occupation Forces", "Attack",
+	"Buy Fuel","Occupation Forces", "Attack",
 	"Embark", "Send Spy Sats", "Cryonics", "Scrap Ships"]
 	

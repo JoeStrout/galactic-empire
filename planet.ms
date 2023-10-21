@@ -59,6 +59,8 @@ Planet.calcProduction = function
 	self.fuel.calcProduction      self.population, 0.0175
 end function
 
+_extraStartRow = -1	// (see comments in Planet.setAllocation)
+
 Planet.setAllocation = function(resIndex, newPercent)
 	// Set the given resource to the given percent (0-100); adjust all
 	// others so that the sum is still 100.
@@ -70,11 +72,14 @@ Planet.setAllocation = function(resIndex, newPercent)
 	extra = allocs.sum - 100
 //	text.clear; text.row = 25; print "extra: " + extra
 	if extra then
-		divisor = self.resources.len - 1
+		divisor = allocs.len - 1
 		if not self.hasIndustry then divisor -= 1
 		if not self.hasFuel then divisor -= 1
-		// loop over all allocations, starting at a random point
-		i = floor(allocs.len * rnd)
+		// Loop over all allocations, applying adjustments until all the
+		// extra is accounted for.  Do this starting at a different row
+		// every time, so any uneven extra doesn't always go to the same one.
+		outer._extraStartRow = (_extraStartRow + 1) % allocs.len
+		i = _extraStartRow
 		while extra
 			if allocs[i] != 0 and i != resIndex then
 				delta = -extra / divisor

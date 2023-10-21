@@ -109,7 +109,7 @@ end function
 fleetButtons = {}
 addFleetButtons = function(left, y, width)
 	if fleetButtons then return		// (already added)
-	ids = [8, 9, 10, 11]
+	ids = [7, 8, 9, 10]
 	qty = ids.len
 	w = round((width - 8 - qty + 1) / qty)
 
@@ -241,8 +241,8 @@ addTargetButtons = function(left, y, width)
 		end for
 		return
 	end if
-	ids = range(0, 7)
-	keys = "tax enlist build supply fuel alloc occupy attack".split
+	ids = range(0, 6)
+	keys = "tax enlist build supply fuel occupy attack".split
 	qty = ids.len
 	w = round((width - 8 - qty + 1) / qty)
 
@@ -276,8 +276,9 @@ drawAllocations = function
 	y = allocTop
 	lineHeight = 16
 	allocWidth = allocRight - allocLeft
+	x2 = allocRight + 40
 	for res in p.resources
-		gfx.fillRect allocLeft, y-lineHeight, allocWidth + 30, lineHeight, color.black
+		gfx.fillRect allocLeft, y-lineHeight, allocWidth + 70, lineHeight, color.black
 		if (res.name == "Industry" and not p.hasIndustry) or
 		   (res.name == "Mining" and not p.hasFuel) then
 			font.print "N/A", allocLeft, y-10, 1, color.gray
@@ -286,6 +287,7 @@ drawAllocations = function
 			gfx.fillRect allocLeft, y-10, barW, 10, infoColor
 			font.print round(res.allocation) + "%", allocLeft + barW + 2, y-10, 1, infoColor
 		end if
+		font.printCentered round(res.production), x2, y-10, 1, infoColor
 		y -= lineHeight
 	end for
 end function
@@ -310,8 +312,9 @@ adjustAllocations = function
 		if newAlloc > maxAllowed then newAlloc = maxAllowed
 		if newAlloc == p.resources[idx].allocation then continue
 		p.setAllocation idx, newAlloc
+		targetPlanet.calcProduction
 		drawAllocations
-	end while
+	end while	
 end function
 
 handleClick = function
@@ -319,8 +322,6 @@ handleClick = function
 		// handle a click in the allocation area, if allowed
 		if targetPlanet.status == planet.EMPIRE then adjustAllocations
 	end if
-	// ...if none of the above apply, then just block until mouse-up
-	while mouse.button; yield; end while
 end function
 
 drawTargetInfo = function
@@ -386,7 +387,7 @@ drawTargetInfo = function
 		   (res.name == "Mining" and not p.hasFuel) then c = color.gray
 		font.printRight res.name, x0, y-10, 1, c
 		//font.print round(res.allocation) + "%", x1, y-10, 1, c
-		font.printCentered round(res.production), x2, y-10, 1, c
+		//font.printCentered round(res.production), x2, y-10, 1, c
 		font.printCentered round(res.amount), x3, y-10, 1, c
 		y -= lineHeight
 	end for
@@ -414,7 +415,6 @@ drawTargetInfo = function
 	targetButtons.build.enable isLocal and isOurs and p.hasIndustry
 	targetButtons.supply.enable isLocal and isOurs
 	targetButtons.fuel.enable isLocal and isOurs and p.hasFuel
-	targetButtons.alloc.enable isLocal and isOurs
 	targetButtons.occupy.enable isLocal and p.status == planet.OCCUPIED
 	targetButtons.attack.enable isLocal and p.status == planet.INDEPENDENT
 end function
