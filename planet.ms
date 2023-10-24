@@ -129,7 +129,8 @@ end function
 Planet.rebel = function
 	self.status = INDEPENDENT
 	galaxyMap.drawPlanet self
-//	infoDisplay.drawAll
+	infoDisplay.drawAll
+	dialogs.MsgDialog.show "Control of " + self.name + " has been lost."
 end function
 
 // Join the glorious Empire.
@@ -141,6 +142,7 @@ Planet.joinEmpire = function
 		res.amount = 0
 	end for
 	infoDisplay.drawAll
+	dialogs.MsgDialog.show self.name + " has joined the Empire."
 end function
 
 availableNames = ("Alhambra Bok Drassa Eventide Farside Harkon Javiny Kgolta Llythll" +

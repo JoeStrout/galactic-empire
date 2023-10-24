@@ -277,6 +277,7 @@ drawAllocations = function
 	lineHeight = 16
 	allocWidth = allocRight - allocLeft
 	x2 = allocRight + 40
+	if p.status == planet.EMPIRE then barColor = buttonColor else barColor = infoColor
 	for res in p.resources
 		gfx.fillRect allocLeft, y-lineHeight, allocWidth + 70, lineHeight, color.black
 		if (res.name == "Industry" and not p.hasIndustry) or
@@ -284,8 +285,8 @@ drawAllocations = function
 			font.print "N/A", allocLeft, y-10, 1, color.gray
 		else
 			barW = round(allocWidth * res.allocation / 80)
-			gfx.fillRect allocLeft, y-10, barW, 10, infoColor
-			font.print round(res.allocation) + "%", allocLeft + barW + 2, y-10, 1, infoColor
+			gfx.fillRect allocLeft, y-10, barW, 10, barColor
+			font.print round(res.allocation) + "%", allocLeft + barW + 2, y-10, 1, barColor
 		end if
 		font.printCentered round(res.production), x2, y-10, 1, infoColor
 		y -= lineHeight

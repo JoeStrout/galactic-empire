@@ -39,8 +39,99 @@ cpad = function(value, spaces=5)
 	return " " * extraLeft + value + " " * (extra - extraLeft)
 end function
 
+// Wrap a long text into multiple lines, breaking on words,
+// as needed to fit within the given width.  Return a list of strings.
+wrapLines = function(s="", width=550, font=null)
+	if not s then return [""]
+	if not font then font = globals.font
+	result = []
+	while true
+		lenToFit = font.lenToFit(s, width)
+		if lenToFit+1 >= s.len then
+			result.push s
+			break
+		end if
+		while lenToFit > 1
+			c = s[lenToFit+1]
+			if c <= " " then break
+			lenToFit = lenToFit - 1
+		end while
+		result.push s[:lenToFit+1]
+		s = s[lenToFit+1:].trimLeft
+	end while
+	return result
+end function
+
+// Extend the Font class to draw wrapped text, and return the next Y.
+bmfFonts.Font.printWrapped = function(s="", x, y, wrapWidth, tint="#FFFFFF")
+	if s isa list then lines = s else lines = wrapLines(s, wrapWidth, self)
+	for line in lines
+		self.print line, x, y, 1, tint
+		y = y - self.lineHeight
+	end for
+	return y
+end function
+
+
+// Generic dialog base class.  Handles drawing the box frame, background
+// and title, plus maybe a few other utilities.
+Dialog = {}
+Dialog.midX = 480
+Dialog.midY = 320
+Dialog.width = 400
+Dialog.height = 200
+Dialog.left = function; return self.midX - self.width/2; end function
+Dialog.right = function; return self.midX + self.width/2; end function
+Dialog.bottom = function; return self.midY - self.height/2; end function
+Dialog.top = function; return self.midY + self.height/2; end function
+Dialog.title = ""
+Dialog.draw = function
+	disp.clear surroundTint
+	disp.fillRect self.left, self.bottom, self.width, self.height, backColor
+	disp.drawRect self.left, self.bottom, self.width, self.height, borderColor
+	disp.fillRect self.left, self.top, self.width, 20, borderColor
+	oldGfx = gfx; globals.gfx = disp	
+	bigFont.printCentered self.title, self.midX, self.top+4, 1, titleColor
+	self.drawContent
+	globals.gfx = oldGfx
+end function
+Dialog.drawContent = null
+Dialog.wait = function(delay=1)
+	// Wait... but let the user dismiss by pressing Esc, Space, Enter, or Return.
+	endTime = time + delay
+	mouseWasDown = mouse.button
+	while time < endTime
+		yield
+		if key.available then
+			k = key.get.code
+			if [3, 10, 13, 27, 32].indexOf(k) != null then return
+		end if
+		if mouse.button and not mouseWasDown then return
+		mouseWasDown = mouse.button
+	end while
+end function
+
+MsgDialog = new Dialog
+MsgDialog.width = 300
+MsgDialog.height = 120
+MsgDialog.message = "Your message here."
+MsgDialog.drawContent = function
+	wrapWidth = self.width - 40
+	lines = wrapLines(self.message, wrapWidth, bigFont)
+	y = self.midY + bigFont.lineHeight * (lines.len/2 + 0)
+	bigFont.printWrapped lines, self.left + 20, y, wrapWidth, textColor
+end function
+MsgDialog.show = function(message, title="")
+	dlog = new MsgDialog
+	dlog.title = title
+	dlog.message = message
+	dlog.draw
+	self.wait 4
+	clear
+end function
+
 // Class representing the battle dialog.
-BattleDialog = {}
+BattleDialog = new Dialog
 BattleDialog.sides = ["Empire", "Defender"]
 BattleDialog.spaceForces = [0, 0]
 BattleDialog.groundForces = [0, 0]
@@ -63,26 +154,17 @@ BattleDialog.winner = function
 end function
 // Run the dialog until somebody wins, or the user cancels.
 BattleDialog.run = function
-	width = 400
-	height = 150
-	midx = 480
-	left = midx - width/2
-	bottom = 328 - height/2
-	disp.clear surroundTint
-	disp.fillRect left, bottom, width, height, backColor
-	disp.drawRect left, bottom, width, height, borderColor
-	disp.fillRect left, bottom+height, width, 20, borderColor
-	
+	self.width = 400
+	self.height = 150
+	self.midY = 328
+	self.title = "Battle for " + self.sides[1]
+	super.draw
 	oldGfx = gfx
 	globals.gfx = disp
-	
-	bigFont.printCentered "Battle for " + self.sides[1], 
-	    midx, bottom+height+4, 1, titleColor
-	
-	y = bottom + height - 24 - 32
+	y = self.top - 24 - 32
 
-	x0 = left + width * 0.45
-	x1 = left + width * 0.75
+	x0 = self.left + self.width * 0.45
+	x1 = self.left + self.width * 0.75
 	bigFont.printCentered self.sides[0], x0, y, 1, textColor
 	w = bigFont.width(self.sides[0])
 	disp.line x0 - w/2 - 2, y-3, x0 + w/2 + 2, y-3, textColor
@@ -92,17 +174,17 @@ BattleDialog.run = function
 	disp.line x1 - w/2 - 2, y-3, x1 + w/2 + 2, y-3, textColor
 	y -= 24
 	
-	bigFont.print "Ships Left:", left + 8, y, 1, textColor
+	bigFont.print "Ships Left:", self.left + 8, y, 1, textColor
 	
 	text.color = color.yellow
 	row = textUtil.textRow(y + 4)
 
 	if self.spaceForces[1] > 0 then
-		bigFont.printCentered "Space Battle", midx, bottom + height - 24, 1, textColor
+		bigFont.printCentered "Space Battle", self.midX, self.top - 24, 1, textColor
 	
 		textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.spaceForces[0])
 		textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.spaceForces[1])
-		wait
+		self.wait
 	
 		while self.spaceForces[0] > 0 and self.spaceForces[1] > 0
 			if rnd < 0.6 then
@@ -115,17 +197,17 @@ BattleDialog.run = function
 			yield
 		end while
 	else
-		bigFont.printCentered "(No Space Defense)", midx, bottom + height - 24, 1, textColor	
+		bigFont.printCentered "(No Space Defense)", self.midX, self.top - 24, 1, textColor	
 	end if
 
 	if self.spaceForces[0] > 0 and self.groundForces[1] > 0 then
-		wait
-		disp.fillRect left+4, bottom + height - 27, width-8, 26, backColor
-		bigFont.printCentered "Land Battle", midx, bottom + height - 24, 1, textColor
+		self.wait
+		disp.fillRect self.left+4, self.top - 27, self.width-8, 26, backColor
+		bigFont.printCentered "Land Battle", self.midX, self.top - 24, 1, textColor
 	
 		textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.groundForces[0])
 		textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.groundForces[1])
-		wait
+		self.wait
 	
 		while self.groundForces[0] > 0 and self.groundForces[1] > 0
 			if rnd < 0.6 then
@@ -141,23 +223,23 @@ BattleDialog.run = function
 	
 	y -= 32	
 	if self.winner == 0 then
-		bigFont.printCentered "Planet Secured!", midx, y, 1, "#FF6666"
+		bigFont.printCentered "Planet Secured!", self.midX, y, 1, "#FF6666"
 	else if self.winner == 1 then
-		bigFont.printCentered "Battle Lost!", midx, y, 1, "#FF6666"
+		bigFont.printCentered "Battle Lost!", self.midX, y, 1, "#FF6666"
 	end if
-	wait 1.5
+	self.wait 1.5
 	
 	globals.gfx = oldGfx
 	clear
-end function
-
-if locals == globals then
-	bd = new BattleDialog
-	bd.spaceForces = [200, 124]
-	bd.groundForces = [180, 120]
-	bd.run
-	key.get
 	disp.clear
 	text.clear
 	text.color = color.orange
+end function
+
+if locals == globals then	
+//	bd = new BattleDialog
+//	bd.spaceForces = [200, 124]
+//	bd.groundForces = [180, 120]
+//	bd.run
+	MsgDialog.show "This is a test of the MsgDialog.show method.", "Testy McTester"
 end if
