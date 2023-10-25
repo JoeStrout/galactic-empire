@@ -48,6 +48,7 @@ advanceTime = function(years)
 	for p in planets
 		p.advanceTime years
 	end for
+	galaxyMap.drawUnderlay
 end function
 
 tryWarpToTarget = function
@@ -61,6 +62,28 @@ tryWarpToTarget = function
 	galaxyMap.drawPlanet oldPlanet
 	galaxyMap.drawPlanet targetPlanet, mouseOverPlanet == targetPlanet
 	infoDisplay.drawAll
+end function
+
+sendSpySats = function
+	//dialogs.MsgDialog.show "Not implemented yet.", "Send Spy Satellites"
+	if fleet.satellites < 1 then
+		dialogs.MsgDialog.show "The fleet has no spy satellites to spare.", "Send Spy Satellites"		
+	else if targetPlanet.satellites + targetPlanet.incomingSats.len >= 3 then
+		dialogs.MsgDialog.show targetPlanet.name + " already has 3 satellites.", "Send Spy Satellites"
+	else
+		fleet.satellites -= 1
+		targetPlanet.addIncomingSat
+		infoDisplay.drawAll
+		galaxyMap.drawUnderlay
+	end if
+end function
+
+cryosleep = function
+	dialogs.MsgDialog.show "Not implemented yet.", "Cryosleep"
+end function
+
+scrapShips = function
+	dialogs.MsgDialog.show "Not implemented yet.", "Scrap Ships"
 end function
 
 attack = function
@@ -201,7 +224,7 @@ updateMap = function
 	if mouse.button and mouse.x > galaxyMap.width then infoDisplay.handleClick
 end function
 
-galaxyMap.draw
+galaxyMap.drawAll
 infoDisplay.drawAll
 
 events.eventLoop.onUpdate = @updateMap

@@ -3,6 +3,7 @@
 import "importUtil"
 ensureImport "bmfFonts"
 ensureImport "textUtil"
+ensureImport "gameRules"
 
 if not globals.hasIndex("bigFont") then
 	globals.bigFont = bmfFonts.Font.load("/sys/fonts/minimicro-pro-16.bmf")
@@ -179,6 +180,7 @@ BattleDialog.run = function
 	text.color = color.yellow
 	row = textUtil.textRow(y + 4)
 
+	planets = [globals.planets[0], fleet.planet]
 	if self.spaceForces[1] > 0 then
 		bigFont.printCentered "Space Battle", self.midX, self.top - 24, 1, textColor
 	
@@ -187,11 +189,7 @@ BattleDialog.run = function
 		self.wait
 	
 		while self.spaceForces[0] > 0 and self.spaceForces[1] > 0
-			if rnd < 0.6 then
-				self.spaceForces[1] -= 1
-			else
-				self.spaceForces[0] -= 1
-			end if
+			gameRules.doSpaceCombat planets, self.spaceForces
 			textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.spaceForces[0])
 			textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.spaceForces[1])
 			yield
@@ -210,11 +208,7 @@ BattleDialog.run = function
 		self.wait
 	
 		while self.groundForces[0] > 0 and self.groundForces[1] > 0
-			if rnd < 0.6 then
-				self.groundForces[1] -= 1
-			else
-				self.groundForces[0] -= 1
-			end if
+			gameRules.doLandCombat planets, self.groundForces
 			textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.groundForces[0])
 			textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.groundForces[1])
 			yield

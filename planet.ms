@@ -25,6 +25,11 @@ Resource.calcProduction = function(population, factor)
 	end if
 end function
 
+IncomingSat = {}
+IncomingSat.origin = null		// planet sats are coming from
+IncomingSat.launchYear = 0		// empire.year at which sats were launched
+IncomingSat.arriveYear = 0		// empire.year at which they should arrive
+
 globals.Planet = {}
 
 Planet.position = {"x":0, "y":0}
@@ -41,6 +46,7 @@ Planet.spaceForces = 0		// space forces (defending or occupying)
 Planet.groundForces = 0		// ground forces (defending or occupying)
 Planet.conqueredOn = null	// turn on which it was conquered
 Planet.joinedOn = null		// turn on which it joined the empire
+Planet.incomingSats = null	// list of IncomingSat instances
 
 Planet.hasIndustry = function; return self.tech > 2; end function
 Planet.hasFuel = function; return self.tech > 1; end function
@@ -108,6 +114,14 @@ Planet.advanceTime = function(years)
 		res.amount += res.production * years
 	end for
 	
+	// put incoming sats into orbit
+	for i in range(self.incomingSats.len - 1, 0, -1)
+		if empire.year >= self.incomingSats[i].arriveYear then
+			if self.satellites < 3 then self.satellites += 1
+			self.incomingSats.remove i
+		end if
+	end for
+	
 	// If independent, grow military forces;
 	// if occupied, battle occupation forces or give up and join the empire.
 	// Exact rules for this are TBD; below is a placeholder for now.
@@ -119,7 +133,7 @@ Planet.advanceTime = function(years)
 		self.groundForces = mathUtil.max(0, self.groundForces - round(years * rnd))
 		if self.spaceForces == 0 and self.groundForces == 0 and rnd > 0.5^years then
 			self.rebel
-		else if empire.year - self.conqueredOn > 20 then
+		else if empire.year - self.conqueredOn > 40 and rnd < 0.35 then
 			self.joinEmpire
 		end if
 	end if
@@ -143,6 +157,20 @@ Planet.joinEmpire = function
 	end for
 	infoDisplay.drawAll
 	dialogs.MsgDialog.show self.name + " has joined the Empire."
+end function
+
+Planet.addIncomingSat = function
+	if fleet.planet == self then
+		// fleet is right here; deploy directly to orbit
+		self.satellites += 1
+	else
+		// launch a satellite to arrive later
+		noob = new IncomingSat
+		noob.origin = fleet.planet
+		noob.launchYear = empire.year
+		noob.arriveYear = noob.launchYear + noob.origin.distanceTo(self)
+		self.incomingSats.push noob
+	end if
 end function
 
 availableNames = ("Alhambra Bok Drassa Eventide Farside Harkon Javiny Kgolta Llythll" +
@@ -189,7 +217,8 @@ Planet.makeGalactica = function
 	p.fuel = Resource.make(p.fuel.name, 20)
 	p.shipParts = Resource.make(p.shipParts.name, 20)
 	p.resources = [p.supplies, p.credits, p.shipParts, p.troops, p.fuel]
-	
+	p.satellites = 3
+	p.incomingSats = []
 	return p
 end function
 
@@ -232,6 +261,7 @@ Planet.makeRandom = function
 	if p.hasIndustry then p.spaceForces = 10 + round(p.population*2*rnd)
 	p.groundForces = 10 + round(p.population*3*rnd)
 	p.resources = [p.supplies, p.credits, p.shipParts, p.troops, p.fuel]
+	p.incomingSats = []
 	return p
 end function
 

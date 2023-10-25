@@ -47,7 +47,10 @@ Button.pressedColor = "#AAAAAA"
 
 Button.state = "NORMAL"
 
-Button.onMouseOver = function; self.enterState "HOVER"; end function
+Button.onMouseOver = function
+	if self.state == "DISABLED" then return
+	self.enterState "HOVER"
+end function
 
 hoveredButton = null
 

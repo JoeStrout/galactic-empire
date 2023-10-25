@@ -115,25 +115,24 @@ addFleetButtons = function(left, y, width)
 
 	x = left; id = ids[0]
 	b = buttons.addButton(x, y, w+4, resources.buttonIcons[id], resources.buttonNames[id], true, false)
+	b.action = @tryWarpToTarget
 	fleetButtons.embark = b
 	
 	x += w+4 + 1; id = ids[1]
 	b = buttons.addButton(x, y, w, resources.buttonIcons[id], resources.buttonNames[id], false, false)
+	b.action = @sendSpySats
 	fleetButtons.spysats = b
 
 	x += w + 1; id = ids[2]
 	b = buttons.addButton(x, y, w, resources.buttonIcons[id], resources.buttonNames[id], false, false)
+	b.action = @cryosleep
 	fleetButtons.cryonics = b
 		
 	x += w + 1; id = ids[3]
 	b = buttons.addButton(x, y, width-x+left, resources.buttonIcons[id], resources.buttonNames[id],
 		false, true)
+	b.action = @scrapShips
 	fleetButtons.scrap = b
-	
-	for b in fleetButtons.values
-		b.action = function; print "Clicked " + self.name; end function
-		b.start
-	end for
 end function
 
 drawFleetInfo = function
@@ -168,6 +167,8 @@ drawFleetInfo = function
 	drawLabeledField leftColLeft, y, colWidth, "Supplies", fleet.supplies + "/" + fleet.maxSupplies
 	drawLabeledField rightColLeft, y, colWidth, "Fuel", fleet.fuel + "/" + fleet.maxFuel
 	y -= lineHeight
+	
+	fleetButtons.scrap.enable fleet.totalShips > 0
 end function
 
 // draw a bunch of little icons, using multiple rows if necessary;
@@ -325,6 +326,11 @@ handleClick = function
 	end if
 end function
 
+ifSats = function(statIfKnown, satsRequired)
+	if targetPlanet.satellites < satsRequired then return "Unknown"
+	return str(statIfKnown)
+end function
+
 drawTargetInfo = function
 	p = targetPlanet
 	isLocal = (targetPlanet == fleet.planet)
@@ -361,11 +367,22 @@ drawTargetInfo = function
 	drawHeader leftColLeft, y, infoWidth, "General information"
 	y -= lineHeight
 	drawLabeledField leftColLeft, y, colWidth, "Status", statusNames[p.status]
-	drawLabeledField rightColLeft, y, colWidth, "Population", 
-	   numToStr(p.population, 1) + " million"
+	
+	sats = p.satellites
+	if sats == 0 then
+		s = "Unknown"
+	else if sats == 1 then
+		s = "~" + round(p.population, -1) + " million"
+	else
+		s = numToStr(p.population, 1) + " million"
+	end if
+	drawLabeledField rightColLeft, y, colWidth, "Population", s
+
 	y -= lineHeight
-	drawLabeledField leftColLeft, y, colWidth, "Technology", techNames[p.tech]
-	drawLabeledField rightColLeft, y, colWidth, "Orbiting Satellites", p.satellites
+	drawLabeledField leftColLeft, y, colWidth, "Technology", ifSats(techNames[p.tech], 1)
+	s = str(p.satellites)
+	if p.incomingSats then s += "(" + p.incomingSats.len + ")"
+	drawLabeledField rightColLeft, y, colWidth, "Orbiting Satellites", s
 	y -= lineHeight
 	
 	drawHeader leftColLeft, y, infoWidth, "Resource Allocation and Information"
@@ -389,10 +406,10 @@ drawTargetInfo = function
 		font.printRight res.name, x0, y-10, 1, c
 		//font.print round(res.allocation) + "%", x1, y-10, 1, c
 		//font.printCentered round(res.production), x2, y-10, 1, c
-		font.printCentered round(res.amount), x3, y-10, 1, c
+		if sats > 1 then font.printCentered round(res.amount), x3, y-10, 1, c
 		y -= lineHeight
 	end for
-	drawAllocations
+	if sats > 1 then drawAllocations
 	
 	if p.status == planet.EMPIRE then
 		drawHeader leftColLeft, y, infoWidth, "Imperial History"
@@ -403,13 +420,10 @@ drawTargetInfo = function
 		if p.status == planet.OCCUPIED then h = "Occupation Strength" else h = "Military Strength"
 		drawHeader leftColLeft, y, infoWidth, h
 		y -= lineHeight
-		drawLabeledField leftColLeft, y, colWidth, "Space Forces", p.spaceForces
-		drawLabeledField rightColLeft, y, colWidth, "Ground Forces", p.groundForces
+		drawLabeledField leftColLeft, y, colWidth, "Space Forces", ifSats(p.spaceForces, 3)
+		drawLabeledField rightColLeft, y, colWidth, "Ground Forces", ifSats(p.groundForces, 3)
 	end if
 	
-	fleetButtons.embark.enable not isLocal
-	fleetButtons.spysats.enable not isLocal and targetPlanet.satellites < 3 and fleet.satellites > 0
-
 	isOurs = p.status == planet.EMPIRE
 	targetButtons.tax.enable isLocal and isOurs
 	targetButtons.enlist.enable isLocal and isOurs
@@ -418,6 +432,9 @@ drawTargetInfo = function
 	targetButtons.fuel.enable isLocal and isOurs and p.hasFuel
 	targetButtons.occupy.enable isLocal and p.status == planet.OCCUPIED
 	targetButtons.attack.enable isLocal and p.status == planet.INDEPENDENT
+	
+	fleetButtons.embark.enable not isLocal and fleet.canReach(p)
+	fleetButtons.spysats.enable fleet.satellites > 0 and p.satellites + p.incomingSats.len < 3
 end function
 
 drawAll = function
