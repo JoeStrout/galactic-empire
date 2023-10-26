@@ -374,7 +374,9 @@ drawTargetInfo = function
 
 	drawHeader leftColLeft, y, infoWidth, "General information"
 	y -= lineHeight
-	drawLabeledField leftColLeft, y, colWidth, "Status", statusNames[p.status]
+	s = statusNames[p.status]
+	if p.status == planet.OCCUPIED then s += " (" + floor(p.conqueredOn) + ")"
+	drawLabeledField leftColLeft, y, colWidth, "Status", s
 	
 	sats = p.satellites
 	if sats == 0 then

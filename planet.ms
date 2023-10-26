@@ -141,12 +141,12 @@ Planet.advanceTime = function(years)
 	else if self.status == OCCUPIED then
 		if self.spaceForces > 0 then
 			perYear = maxSpaceForce / 100
-			self.spaceForces = mathUtil.mathUtil.max(0, 
+			self.spaceForces = mathUtil.max(0, 
 			  self.spaceForces - floor(perYear * years + rnd))
 		end if
 		if self.groundForces > 0 then
 			perYear = maxGroundForce / 100
-			self.groundForces = mathUtil.mathUtil.max(0, 
+			self.groundForces = mathUtil.max(0, 
 			  self.groundForces - floor(perYear * years + rnd))
 		end if
 		if self.spaceForces == 0 and self.groundForces == 0 and rnd > 0.5^years then
