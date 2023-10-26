@@ -73,6 +73,117 @@ bmfFonts.Font.printWrapped = function(s="", x, y, wrapWidth, tint="#FFFFFF")
 	return y
 end function
 
+// Simple BMF-based numeric input field.
+InputField = {}
+InputField.bounds = null		// a Bounds instance representing the field bounds
+InputField.text = ""
+InputField.backColor = "#111111"
+InputField.borderColor = "#888888"
+InputField.textColor = "#AAAAFF"
+InputField.focusedTextColor = "#FFFFAA"
+InputField.selColor = "#FFFFAA"
+InputField.selTextColor = "#000044"
+InputField.textSelected = false
+InputField.gfx = gfx
+InputField.font = bigFont
+// Class (not instance) properties:
+InputField.instances = []
+InputField.focusedField = null	// (class property, points to field with focus)
+
+InputField.make = function(left, bottom, width, height, text="0")
+	fld = new InputField
+	fld.bounds = new Bounds
+	fld.bounds.x = left + width/2
+	fld.bounds.y = bottom + height/2
+	fld.bounds.width = width
+	fld.bounds.height = height
+	fld.text = text
+	InputField.instances.push fld
+	return fld
+end function
+
+InputField.close = function
+	idx = InputField.instances.indexOf(self)
+	if idx != null then InputField.instances.remove idx
+	self.gfx.fillPoly mathUtil.offsetPoly(self.bounds.corners, -1), color.clear
+end function
+
+InputField.closeAll = function
+	for i in range(InputField.instances.len-1, 0, -1)
+		InputField.instances[i].close
+	end for
+end function
+
+InputField.handleClickAll = function
+	for fld in InputField.instances
+		if fld.bounds.contains(mouse) then
+			fld.select
+			while mouse.button; yield; end while
+		end if
+	end for
+end function
+
+InputField.handleKeyAll = function(keyChar)
+	fld = InputField.focusedField
+	keyCode = keyChar.code
+	if fld == null and keyCode != 9 and keyCode != 25 then return
+	if keyCode == 9 or keyCode == 25 then		// tab or shift-tab
+		if not InputField.instances then return
+		reverse = key.pressed("left shift") or key.pressed("right shift") or keyCode == 25		
+		idx = InputField.instances.indexOf(fld)
+		if idx == null then
+			idx = 0 - reverse
+		else
+			idx += 1 - 2*reverse
+			if idx >= InputField.instances.len then idx = 0
+		end if
+		InputField.instances[idx].select
+	else if keyChar == char(8) then	// backspace
+		if fld.textSelected then fld.text = ""
+		fld.text = fld.text[:-1]
+		if fld.text == "" then fld.text = "0"
+		fld.textSelected = false
+		fld.draw
+	else if keyChar >= "0" and keyChar <= "9" then
+		if fld.text == "0" or fld.textSelected then fld.text = ""
+		fld.text += keyChar
+		fld.textSelected = false
+		fld.draw
+	else
+		print "Unknown char: " + keyChar.code
+	end if
+end function
+
+InputField.deselect = function
+	if InputField.focusedField == self then InputField.focusedField = null
+	self.textSelected = false
+	self.draw
+end function
+
+InputField.select = function(selectIt=true)
+	if not selectIt then return self.deselect
+
+	if InputField.focusedField then InputField.focusedField.deselect
+	InputField.focusedField = self
+	self.textSelected = true
+	self.draw
+end function
+
+InputField.draw = function
+	focused = (InputField.focusedField == self)
+	c = self.bounds.corners
+	self.gfx.fillPoly c, self.backColor
+	self.gfx.drawPoly c, self.borderColor
+	x = c[2][0] - 8 - self.font.width(self.text)
+	y = c[0][1] + 8
+	if self.textSelected then
+		self.gfx.fillPoly mathUtil.offsetPoly(c, 3), self.selColor
+		self.font.print self.text, x, y, 1, self.selTextColor
+	else
+		if focused then clr = self.focusedTextColor else clr = self.textColor
+		self.font.print self.text, x, y, 1, clr
+	end if
+end function
 
 // Generic dialog base class.  Handles drawing the box frame, background
 // and title, plus maybe a few other utilities.
@@ -230,10 +341,35 @@ BattleDialog.run = function
 	text.color = color.orange
 end function
 
-if locals == globals then	
-//	bd = new BattleDialog
-//	bd.spaceForces = [200, 124]
-//	bd.groundForces = [180, 120]
-//	bd.run
-	MsgDialog.show "This is a test of the MsgDialog.show method.", "Testy McTester"
+if locals == globals then
+	if false then
+		bd = new BattleDialog
+		bd.spaceForces = [200, 124]
+		bd.groundForces = [180, 120]
+		bd.run
+	end if
+	if false then
+		MsgDialog.show "This is a test of the MsgDialog.show method.", "Testy McTester"
+	end if
+	if true then
+		gfx.clear
+		fld = InputField.make(400, 300, 80, 28, "111")
+		fld.draw
+		fld2 = InputField.make(400, 260, 80, 28, "222")
+		fld2.draw
+		fld3 = InputField.make(400, 220, 80, 28, "333")
+		fld3.draw
+		while true
+			if mouse.button then
+				InputField.handleClickAll
+				while mouse.button; yield; end while
+			end if
+			if key.available then
+				k = key.get
+				if k == char(27) then break
+				InputField.handleKeyAll k
+			end if
+		end while
+		InputField.closeAll
+	end if
 end if
