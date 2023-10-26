@@ -98,11 +98,8 @@ attack = function
 	fleet.fighters = dlog.spaceForces[0]
 	fleet.mannedTransports = dlog.groundForces[0]
 	if dlog.winner == 0 then	// empire won
-		targetPlanet.status = planet.OCCUPIED
-		targetPlanet.occupiedOn = empire.year
+		targetPlanet.occupy
 		galaxyMap.drawPlanet targetPlanet, mouseOverPlanet == targetPlanet
-		targetPlanet.spaceForces = 0
-		targetPlanet.groundForces = 0
 		empire.updateTotals
 	else						// empire lost or withdrew
 		targetPlanet.spaceForces = dlog.spaceForces[1]

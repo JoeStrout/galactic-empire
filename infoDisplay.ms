@@ -274,6 +274,8 @@ end function
 
 drawAllocations = function
 	p = targetPlanet
+	isOurs = (p.status == planet.EMPIRE)
+	known = (p.satellites > 1)
 	y = allocTop
 	lineHeight = 16
 	allocWidth = allocRight - allocLeft
@@ -281,15 +283,20 @@ drawAllocations = function
 	if p.status == planet.EMPIRE then barColor = buttonColor else barColor = infoColor
 	for res in p.resources
 		gfx.fillRect allocLeft, y-lineHeight, allocWidth + 70, lineHeight, color.black
-		if (res.name == "Industry" and not p.hasIndustry) or
-		   (res.name == "Mining" and not p.hasFuel) then
-			font.print "N/A", allocLeft, y-10, 1, color.gray
-		else
+		c = infoColor
+		if p.satellites > 0 and ((res.name == "Industry" and not p.hasIndustry) or
+		   (res.name == "Mining" and not p.hasFuel)) then
+			c = color.gray
+			font.print "N/A", allocLeft, y-10, 1, c
+		else if known then
 			barW = round(allocWidth * res.allocation / 80)
 			gfx.fillRect allocLeft, y-10, barW, 10, barColor
 			font.print round(res.allocation) + "%", allocLeft + barW + 2, y-10, 1, barColor
+		else
+			font.print "Unknown", allocLeft, y-10, 1, infoColor
 		end if
-		font.printCentered round(res.production), x2, y-10, 1, infoColor
+		if isOurs then s = round(res.production) else s = "N/A"
+		font.printCentered s, x2, y-10, 1, c
 		y -= lineHeight
 	end for
 end function
@@ -334,6 +341,7 @@ end function
 drawTargetInfo = function
 	p = targetPlanet
 	isLocal = (targetPlanet == fleet.planet)
+	isOurs = p.status == planet.EMPIRE
 	width = 400
 	top = 260
 	drawTitledBox 960-width, top, width, 260, "Information on " + p.name
@@ -401,15 +409,16 @@ drawTargetInfo = function
 	outer.allocRight = x2 - 40
 	for res in p.resources
 		c = infoColor
-		if (res.name == "Industry" and not p.hasIndustry) or
-		   (res.name == "Mining" and not p.hasFuel) then c = color.gray
+		if p.satellites > 0 and ((res.name == "Industry" and not p.hasIndustry) or
+		   (res.name == "Mining" and not p.hasFuel)) then c = color.gray
 		font.printRight res.name, x0, y-10, 1, c
 		//font.print round(res.allocation) + "%", x1, y-10, 1, c
 		//font.printCentered round(res.production), x2, y-10, 1, c
-		if sats > 1 then font.printCentered round(res.amount), x3, y-10, 1, c
+		if isOurs then s = round(res.amount) else s = "N/A"
+		font.printCentered s, x3, y-10, 1, c
 		y -= lineHeight
 	end for
-	if sats > 1 then drawAllocations
+	drawAllocations
 	
 	if p.status == planet.EMPIRE then
 		drawHeader leftColLeft, y, infoWidth, "Imperial History"
@@ -424,7 +433,6 @@ drawTargetInfo = function
 		drawLabeledField rightColLeft, y, colWidth, "Ground Forces", ifSats(p.groundForces, 3)
 	end if
 	
-	isOurs = p.status == planet.EMPIRE
 	targetButtons.tax.enable isLocal and isOurs
 	targetButtons.enlist.enable isLocal and isOurs
 	targetButtons.build.enable isLocal and isOurs and p.hasIndustry

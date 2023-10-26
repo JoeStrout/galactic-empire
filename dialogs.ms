@@ -86,6 +86,7 @@ InputField.selTextColor = "#000044"
 InputField.textSelected = false
 InputField.gfx = gfx
 InputField.font = bigFont
+InputField.onTextChange = null
 // Class (not instance) properties:
 InputField.instances = []
 InputField.focusedField = null	// (class property, points to field with focus)
@@ -144,13 +145,15 @@ InputField.handleKeyAll = function(keyChar)
 		if fld.text == "" then fld.text = "0"
 		fld.textSelected = false
 		fld.draw
+		fld.onTextChange
 	else if keyChar >= "0" and keyChar <= "9" then
 		if fld.text == "0" or fld.textSelected then fld.text = ""
 		fld.text += keyChar
 		fld.textSelected = false
 		fld.draw
+		fld.onTextChange
 	else
-		print "Unknown char: " + keyChar.code
+		//print "Unknown char: " + keyChar.code
 	end if
 end function
 
@@ -339,6 +342,13 @@ BattleDialog.run = function
 	disp.clear
 	text.clear
 	text.color = color.orange
+end function
+
+// Build dialog: select how many ships you want to build, and build 'em.
+BuildDialog = new Dialog
+
+BuildDialog.make = function
+	// ToDo!
 end function
 
 if locals == globals then

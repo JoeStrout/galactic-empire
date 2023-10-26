@@ -45,7 +45,7 @@ Planet.fuel = Resource.make("Mining")
 Planet.spaceForces = 0		// space forces (defending or occupying)
 Planet.groundForces = 0		// ground forces (defending or occupying)
 Planet.conqueredOn = null	// turn on which it was conquered
-Planet.joinedOn = null		// turn on which it joined the empire
+Planet.joinedOn = null		// turn on which it joined (or WILL JOIN) the empire
 Planet.incomingSats = null	// list of IncomingSat instances
 
 Planet.hasIndustry = function; return self.tech > 2; end function
@@ -122,21 +122,48 @@ Planet.advanceTime = function(years)
 		end if
 	end for
 	
-	// If independent, grow military forces;
-	// if occupied, battle occupation forces or give up and join the empire.
-	// Exact rules for this are TBD; below is a placeholder for now.
+	// If independent, grow military forces (to full strength over 50 years);
+	// if occupied, reduce occupation forces (at half the rate we would grow our own),
+	// or give up and join the empire.	
+	maxSpaceForce = gameRules.spaceForceSize(self)
+	maxGroundForce = gameRules.groundForceSize(self)
 	if self.status == INDEPENDENT then
-		if self.hasIndustry then self.spaceForces += round(years * rnd * 0.5)
-		self.groundForces += round(years * rnd * 0.8)
+		if self.spaceForces < maxSpaceForce then
+			perYear = maxSpaceForce / 50
+			self.spaceForces = mathUtil.min(maxSpaceForce, 
+			  self.spaceForces + floor(perYear * years + rnd))
+		end if
+		if self.groundForces < maxGroundForce then
+			perYear = maxGroundForce / 50
+			self.groundForces = mathUtil.min(maxGroundForce, 
+			  self.groundForces + floor(perYear * years + rnd))
+		end if
 	else if self.status == OCCUPIED then
-		self.spaceForces = mathUtil.max(0, self.spaceForces - round(years * rnd * 3))
-		self.groundForces = mathUtil.max(0, self.groundForces - round(years * rnd))
+		if self.spaceForces > 0 then
+			perYear = maxSpaceForce / 100
+			self.spaceForces = mathUtil.mathUtil.max(0, 
+			  self.spaceForces - floor(perYear * years + rnd))
+		end if
+		if self.groundForces > 0 then
+			perYear = maxGroundForce / 100
+			self.groundForces = mathUtil.mathUtil.max(0, 
+			  self.groundForces - floor(perYear * years + rnd))
+		end if
 		if self.spaceForces == 0 and self.groundForces == 0 and rnd > 0.5^years then
 			self.rebel
-		else if empire.year - self.conqueredOn > 40 and rnd < 0.35 then
+		else if empire.year > self.joinedOn then
 			self.joinEmpire
 		end if
 	end if
+end function
+
+// Planet is freshly conquered!  Mark it as occupied
+Planet.occupy = function
+	self.status = OCCUPIED
+	self.conqueredOn = empire.year
+	self.joinedOn = round(empire.year + 40 + rnd*5 + rnd*5)
+	self.spaceForces = 0
+	self.groundForces = 0
 end function
 
 // Shake off our occupation and become independent again.

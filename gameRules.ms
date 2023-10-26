@@ -30,3 +30,18 @@ doLandCombat = function(planets, landForces)
 		landForces[0] -= 1
 	end if
 end function
+
+// Return how many fighters this planet will build if left alone.
+// Depends on tech level, population size, and military allocation
+// (and eventually, on game difficulty).
+spaceForceSize = function(planet)
+	techFactor = [0, 0, 0.29, 0.32][planet.tech - 1]
+	return round(techFactor * planet.population * planet.troops.allocation * 0.1)
+end function
+
+// Return how many ground forces this planet will build if left alone.
+// Depends on tech level, population size, and military allocation.
+groundForceSize = function(planet)
+	techFactor = [0.61, 0.79, 1, 1][planet.tech - 1]
+	return round(techFactor * planet.population * planet.troops.allocation * 0.1)
+end function
