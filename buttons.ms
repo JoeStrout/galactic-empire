@@ -3,6 +3,11 @@
 import "importUtil"
 ensureImport "events"
 ensureImport "resources"
+if not globals.hasIndex("font") then
+	ensureImport "bmfFonts"
+	bigFont = bmfFonts.Font.load("/sys/fonts/minimicro-pro-16.bmf")
+	font = bmfFonts.Font.load("/sys/fonts/minimicro-pro-12.bmf")
+end if
 
 buttonColor = "#DA00FF"
 
@@ -10,7 +15,7 @@ scratchDisp = new PixelDisplay
 
 buttons = []
 
-buttonImage = function(width=48, icon=null, roundLeft=true, roundRight=true)
+buttonImage = function(width=48, icon=null, text=null, roundLeft=true, roundRight=true)
 	src = resources.pics.button
 	h = src.height
 	scratchDisp.clear color.black, width, h
@@ -27,6 +32,11 @@ buttonImage = function(width=48, icon=null, roundLeft=true, roundRight=true)
 	end if
 	if icon then
 		scratchDisp.drawImage icon, width/2 - icon.width/2, h/2 - icon.height/2
+	end if
+	if text then
+		oldGfx = gfx; globals.gfx = scratchDisp
+		bigFont.printCentered text, width/2, 5, 1, color.black
+		globals.gfx = oldGfx
 	end if
 	return scratchDisp.getImage(0, 0, width, h)
 end function
@@ -113,9 +123,9 @@ Button.update = function
 	end if
 end function
 
-addButton = function(left, bottom, width, icon, name, roundLeft=true, roundRight=true)
+addTextOrIconButton = function(left, bottom, width, icon, text, name, roundLeft=true, roundRight=true)
 	btn = new Button
-	btn.image = buttonImage(width, icon, roundLeft, roundRight)
+	btn.image = buttonImage(width, icon, text, roundLeft, roundRight)
 	btn.name = name
 	btn.x = left + width/2
 	btn.y = bottom + btn.image.height/2
@@ -129,6 +139,12 @@ addButton = function(left, bottom, width, icon, name, roundLeft=true, roundRight
 	btn.start
 	buttons.push btn
 	return btn
+end function
+
+addButton = function(left, bottom, width, iconOrText, name, roundLeft=true, roundRight=true)
+	icon = null; text = null
+	if iconOrText isa string then text = iconOrText else icon = iconOrText
+	return addTextOrIconButton(left, bottom, width, icon, text, name, roundLeft, roundRight)
 end function
 
 runTest = function

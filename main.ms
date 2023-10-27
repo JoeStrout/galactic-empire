@@ -79,7 +79,7 @@ sendSpySats = function
 end function
 
 cryosleep = function
-	dialogs.MsgDialog.show "Not implemented yet.", "Cryosleep"
+	dialogs.MsgDialog.show "Not implemented yet.", "Cryonics"
 end function
 
 scrapShips = function
@@ -165,27 +165,13 @@ buyFuel = function
 end function
 
 buildShips = function
-	if targetPlanet != fleet.planet or targetPlanet.status != planet.EMPIRE then return
-	// for now, just build 50 at a time -- fighters with Option key, else transports
-	qtyFighters = 0; qtyTransports = 0
-	if key.pressed("left alt") or key.pressed("right alt") then 
-		qtyFighters = 50
-		qtyFighters = mathUtil.min(50, floor(targetPlanet.shipParts.amount / 10))
-		qtyFighters = mathUtil.min(qtyFighters, floor(empire.credits / 16))
-	else
-		qtyTransports = 50
-		qtyTransports = mathUtil.min(50, floor(targetPlanet.shipParts.amount / 5))
-		qtyTransports = mathUtil.min(qtyTransports, floor(empire.credits / 4))
-	end if
-	totalQty = qtyFighters + qtyTransports
-	if totalQty == 0 then return
-	partCost = 10 * qtyFighters + 5 * qtyTransports
-	creditCost = 16 * qtyFighters + 4 * qtyTransports
-	empire.credits -= creditCost
-	fleet.fighters += qtyFighters
-	fleet.emptyTransports += qtyTransports
-	targetPlanet.shipParts.amount -= partCost
-	advanceTime 1
+	if targetPlanet != fleet.planet or targetPlanet.status != planet.EMPIRE then return	
+
+	dlog = new dialogs.BuildDialog
+	dlog.planet = fleet.planet
+	dlog.run
+	
+	if dlog.totalQty > 0 then advanceTime 1
 	infoDisplay.drawAll
 end function
 

@@ -1,9 +1,11 @@
 // This module manages various pop-up dialogs drawn over the main UI.
 
 import "importUtil"
+ensureImport "mathUtil"
 ensureImport "bmfFonts"
 ensureImport "textUtil"
 ensureImport "gameRules"
+ensureImport "buttons"
 
 if not globals.hasIndex("bigFont") then
 	globals.bigFont = bmfFonts.Font.load("/sys/fonts/minimicro-pro-16.bmf")
@@ -16,6 +18,9 @@ text.clear
 display(3).mode = displayMode.pixel
 disp = display(3)
 disp.clear
+
+display(2).mode = displayMode.sprite	// (for dialog buttons)
+display(2).clear
 
 backColor = "#000044"
 borderColor = "#8800FF"
@@ -73,6 +78,23 @@ bmfFonts.Font.printWrapped = function(s="", x, y, wrapWidth, tint="#FFFFFF")
 	return y
 end function
 
+printHeader = function(s, x, y, color)
+	w = bigFont.width(s)
+	left = round(x - w/2)
+	y -= 10
+	bigFont.print s, left, y, 1, color
+	gfx.line left, y-2, left+w, y-2, color
+end function
+
+printHeaderRight = function(s, x, y, color)
+	w = bigFont.width(s)
+	left = round(x - w)
+	y -= 10
+	bigFont.print s, left, y, 1, color
+	gfx.line left, y-2, left+w, y-2, color
+end function
+
+
 // Simple BMF-based numeric input field.
 InputField = {}
 InputField.bounds = null		// a Bounds instance representing the field bounds
@@ -84,7 +106,7 @@ InputField.focusedTextColor = "#FFFFAA"
 InputField.selColor = "#FFFFAA"
 InputField.selTextColor = "#000044"
 InputField.textSelected = false
-InputField.gfx = gfx
+InputField.gfx = disp
 InputField.font = bigFont
 InputField.onTextChange = null
 // Class (not instance) properties:
@@ -346,9 +368,169 @@ end function
 
 // Build dialog: select how many ships you want to build, and build 'em.
 BuildDialog = new Dialog
+BuildDialog.shipTypes = ["Fighters", "Transports", "Spy Satellites", "Supply Ships", "Fuel Ships"]
+BuildDialog.partCosts = [12, 6, 100, 200, 300]
+BuildDialog.creditCosts = [18, 5, 115, 269, 451]	// ToDo: vary by planet
+BuildDialog.partColor = "#AAAAAA"
+BuildDialog.creditColor = "#88CC88"
+BuildDialog.done = false
+BuildDialog.planet = null
+BuildDialog.totalQty = 0
 
-BuildDialog.make = function
-	// ToDo!
+BuildDialog.availableParts = function
+	if self.planet == null then return 0
+	return floor(self.planet.shipParts.amount)
+end function
+
+BuildDialog.setup = function
+	self.width = 632
+	self.midX = self.width/2 + 10
+	self.height = 400
+	self.title = "Build Ships"
+	super.draw
+	x0 = self.left + 168
+	dx = 88
+	y1 = self.top - 32	// "Unit Cost" and "Total Cost"
+	y2 = self.top - 60	// "Parts", "Credits"
+	printHeader "Unit Cost", x0 + dx*2+20, y1, textColor
+	printHeader "Total Cost", x0 + dx*4+20, y1, textColor
+	printHeaderRight "Parts", x0 + dx*2, y2, self.partColor
+	printHeaderRight "Credits", x0 + dx*3, y2, self.creditColor
+	printHeaderRight "Parts", x0 + dx*4, y2, self.partColor
+	printHeaderRight "Credits", x0 + dx*5, y2, self.creditColor
+	
+	self.qtyFields = []
+	y = self.top - 100
+	for i in self.shipTypes.indexes
+		type = self.shipTypes[i]
+		bigFont.printRight type, x0 - 8, y, 1, textColor
+		fld = InputField.make(x0, y-8, 80, 28)
+		dialog = self
+		fld.onTextChange = function; dialog.updateTotals; end function
+		fld.draw
+		self.qtyFields.push fld		
+		bigFont.printRight self.partCosts[i], x0 + dx*2, y, 1, self.partColor
+		bigFont.printRight self.creditCosts[i], x0 + dx*3, y, 1, self.creditColor
+		bigFont.printRight self.partCosts[i]*0, x0 + dx*4, y, 1, self.partColor
+		bigFont.printRight self.creditCosts[i]*0, x0 + dx*5, y, 1, self.creditColor		
+		y -= 40
+	end for
+	self.totalY = y
+	bigFont.printRight "Grand Total:", x0 + dx*3, self.totalY, 1, textColor
+	bigFont.printRight 0, x0 + dx*4, self.totalY, 1, self.partColor
+	bigFont.printRight 0, x0 + dx*5, self.totalY, 1, self.creditColor		
+	gfx.line x0 + dx*3+20, self.totalY+24, x0 + dx*4, self.totalY+24, self.partColor
+	gfx.line x0 + dx*4+20, self.totalY+24, x0 + dx*5, self.totalY+24, self.creditColor
+	y = self.totalY - 30
+	s = "Available"
+	if self.planet != null then s += " at " + self.planet.name
+	bigFont.printRight s + ":", x0 + dx*3, y, 1, textColor
+	bigFont.printRight self.availableParts, x0 + dx*4, y, 1, self.partColor
+	bigFont.printRight empire.credits, x0 + dx*5, y, 1, self.creditColor		
+	
+	self.done = false
+	self.okButton = buttons.addButton(self.midX + 20, self.bottom + 20, 100, "OK")
+	self.okButton.action = function; dialog.apply; end function
+	self.cancelButton = buttons.addButton(self.midX - 20 - 100, self.bottom + 20, 100, "Cancel")
+	self.cancelButton.action = function; dialog.done = true; end function
+end function
+
+BuildDialog.updateTotals = function
+	y = self.top - 100
+	x0 = self.left + 168
+	dx = 88
+	totalParts = 0
+	totalCredits = 0
+	for i in self.qtyFields.indexes
+		qty = self.qtyFields[i].text.val
+		gfx.fillRect x0 + dx*3+10, y-6, dx*2, 24, backColor
+		bigFont.printRight self.partCosts[i]*qty, x0 + dx*4, y, 1, self.partColor
+		bigFont.printRight self.creditCosts[i]*qty, x0 + dx*5, y, 1, self.creditColor
+		totalParts += self.partCosts[i]*qty
+		totalCredits += self.creditCosts[i]*qty
+		y -= 40
+	end for
+	self.totalY = y
+	gfx.fillRect x0 + dx*3+10, self.totalY-6, dx*2, 24, backColor
+	bigFont.printRight totalParts, x0 + dx*4, self.totalY, 1, self.partColor
+	bigFont.printRight totalCredits, x0 + dx*5, self.totalY, 1, self.creditColor
+	self.okButton.enable totalParts <= self.availableParts and totalCredits <= empire.credits		
+end function
+
+BuildDialog.autoMax = function
+	// Fill in the maximum we can afford for the current ship type.
+	idx = self.qtyFields.indexOf(InputField.focusedField)
+	if idx < 0 then return
+	// First, calculate total cost of everything else
+	totalParts = 0; totalCredits = 0
+	for i in self.qtyFields.indexes
+		if i == idx then continue
+		qty = self.qtyFields[i].text.val
+		totalParts += self.partCosts[i]*qty
+		totalCredits += self.creditCosts[i]*qty
+	end for
+	// Then, see how much we can afford of this one
+	availParts = self.availableParts - totalParts
+	availCreds = empire.credits - totalCredits
+	if availParts <= 0 or availCreds <= 0 then
+		qty = 0
+	else
+		qty = floor(mathUtil.min(availParts/self.partCosts[idx], availCreds/self.creditCosts[idx]))
+	end if
+	self.qtyFields[idx].text = str(qty)
+	self.qtyFields[idx].draw
+	self.updateTotals
+end function
+
+BuildDialog.apply = function
+	totalParts = 0; totalCredits = 0; self.totalQty = 0
+	for i in self.qtyFields.indexes
+		qty = self.qtyFields[i].text.val
+		if i == 0 then fleet.fighters += qty
+		if i == 1 then fleet.emptyTransports += qty
+		if i == 2 then fleet.satellites += qty
+		if i == 3 then fleet.supplyShips += qty
+		if i == 4 then fleet.fuelShips += qty
+		self.totalQty += qty
+		totalParts += self.partCosts[i]*qty
+		totalCredits += self.creditCosts[i]*qty
+	end for
+	self.planet.shipParts.amount -= totalParts
+	empire.credits -= totalCredits
+	self.done = true
+end function
+
+BuildDialog.run = function
+	oldGfx = gfx; globals.gfx = disp
+	oldSpriteDisp = events.spriteDisplay; events.spriteDisplay = display(2)
+
+	self.setup
+	
+	if self.qtyFields[0] == self.qtyFields[2] then exit
+	
+	self.updateTotals
+	
+	events.eventLoop.mouseWasDown = false
+	events.eventLoop.running = true
+	
+	while not self.done
+		yield
+		if mouse.button then InputField.handleClickAll
+		if key.available then
+			k = key.get
+			if k == char(27) then break
+			if k == char(10) or k == char(3) or k == char(13) then self.apply
+			if k == " " or k == "*" or k == "?" or k == "/" then self.autoMax
+			InputField.handleKeyAll k
+		end if		
+		events.eventLoop.update
+	end while
+	
+	disp.clear
+	InputField.closeAll
+	events.spriteDisplay.clear
+	globals.gfx = oldGfx
+	events.spriteDisplay = oldSpriteDisp
 end function
 
 if locals == globals then
@@ -361,7 +543,7 @@ if locals == globals then
 	if false then
 		MsgDialog.show "This is a test of the MsgDialog.show method.", "Testy McTester"
 	end if
-	if true then
+	if false then
 		gfx.clear
 		fld = InputField.make(400, 300, 80, 28, "111")
 		fld.draw
@@ -381,5 +563,9 @@ if locals == globals then
 			end if
 		end while
 		InputField.closeAll
+	end if
+	if true then
+		bd = new BuildDialog
+		bd.run
 	end if
 end if
