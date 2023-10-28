@@ -19,9 +19,10 @@ left = 960-width
 
 
 tempDisp = new PixelDisplay
-starPlanetImage = null
+starPlanetImage = null	// image of planet we're currently orbiting
+transitImage = null		// image of planet we're approaching, while in transit
 
-prepare = function
+makeStarPlanetImage = function(planet=null)
 	// create an image of the stars and planet, tall enough that we can
 	// scroll the planet out of view
 	tempDisp.clear color.black, width, height*2.5	
@@ -29,10 +30,18 @@ prepare = function
 		c = color.rgb(100+155*rnd, 100+155*rnd, 100+155*rnd)
 		tempDisp.setPixel width*rnd, tempDisp.height*rnd, c
 	end for
-	p = resources.pics.planet
+	if planet == null then p = resources.planets[0] else p = planet.image
 	tempDisp.drawImage p, 0, 0
 	
-	outer.starPlanetImage = tempDisp.getImage(0, 0, tempDisp.width, tempDisp.height)
+	return tempDisp.getImage(0, 0, tempDisp.width, tempDisp.height)
+end function
+
+prepare = function(planet=null)
+	outer.starPlanetImage = makeStarPlanetImage(planet)
+end function
+
+prepareTransit = function(newPlanet)
+	outer.transitImage = makeStarPlanetImage(newPlanet)
 end function
 
 draw = function
@@ -67,6 +76,10 @@ end function
 
 // Slowly pan back towards from the planet
 animateArrival = function(duration = 2.5)
+	if transitImage != null then
+		outer.starPlanetImage = transitImage
+		outer.transitImage = null
+	end if
 	maxy = starPlanetImage.height - height
 	startTime = time
 	endTime = startTime + duration
@@ -106,7 +119,8 @@ drawWarpFrame = function(timeSinceStart, duration)
 	if timeSinceStart == 0 then tempDisp.clear color.clear, width, height
 	drawWarpRings tempDisp, timeSinceStart, duration
 	img = tempDisp.getImage(0, 0, width, height)
-	gfx.drawImage starPlanetImage, left+1, bottom+1, width-2, height-2, 
+	if timeSinceStart > duration/2 and transitImage then p = transitImage else p = starPlanetImage
+	gfx.drawImage p, left+1, bottom+1, width-2, height-2, 
 			1, starPlanetImage.height - height+1, width-2, height-2
 	gfx.drawImage img, left+1, bottom+1, width-2, height-2, 1, 1, width-2, height-2
 end function

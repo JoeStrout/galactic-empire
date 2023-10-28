@@ -56,7 +56,9 @@ end function
 tryWarpToTarget = function
 	if targetPlanet == fleet.planet then return
 	if not fleet.canReach(targetPlanet) then return
+
 	// WARP!!!
+	planetView.prepareTransit targetPlanet
 	planetView.animateDeparture
 	galaxyMap.animateWarp fleet.planet, targetPlanet, @planetView.drawWarpFrame
 	planetView.animateArrival

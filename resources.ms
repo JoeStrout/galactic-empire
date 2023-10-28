@@ -1,9 +1,18 @@
 pics = {}
 
-for filename in file.children("pictures")
+picsFolder = file.child(file.curdir, "pictures")
+for filename in file.children(picsFolder)
 	if filename[-4:] != ".png" then continue
-	pics[filename - ".png"] = file.loadImage("pictures/" + filename)
+	pics[filename - ".png"] = file.loadImage(file.child(picsFolder, filename))
 end for
+
+planets = []
+planetFolder = file.child(picsFolder, "planets")
+for filename in file.children(planetFolder).sort
+	if filename[-4:] != ".png" then continue
+	planets.push file.loadImage(file.child(planetFolder, filename))
+end for
+
 
 _buttonIcons = null
 buttonIcons = function

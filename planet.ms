@@ -47,6 +47,7 @@ Planet.groundForces = 0		// ground forces (defending or occupying)
 Planet.conqueredOn = null	// turn on which it was conquered
 Planet.joinedOn = null		// turn on which it joined (or WILL JOIN) the empire
 Planet.incomingSats = null	// list of IncomingSat instances
+Planet.image = null
 
 Planet.hasIndustry = function; return self.tech > 2; end function
 Planet.hasFuel = function; return self.tech > 1; end function
@@ -246,6 +247,7 @@ Planet.makeGalactica = function
 	p.resources = [p.supplies, p.credits, p.shipParts, p.troops, p.fuel]
 	p.satellites = 3
 	p.incomingSats = []
+	p.image = resources.planets[0]
 	return p
 end function
 
@@ -257,6 +259,7 @@ Planet.makeRandom = function
 	end if
 	p.name = availableNames.pull
 	usedNames.push p.name
+	p.image = resources.planets[1 + rnd * (resources.planets.len-1)]
 	
 	while true
 		p.position = randomPosition
