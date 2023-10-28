@@ -43,7 +43,7 @@ drawUnderlay = function
 	end for
 end function
 
-animateWarp = function(fromPlanet, toPlanet)
+animateWarp = function(fromPlanet, toPlanet, frameCallback)
 	duration = mathUtil.max(0.5, fromPlanet.distanceTo(toPlanet) / 20)
 	fromPos = fromPlanet.position
 	toPos = toPlanet.position
@@ -54,15 +54,17 @@ animateWarp = function(fromPlanet, toPlanet)
 	// or so early, and the tail leaves the source by the same delay.
 	delay = mathUtil.min(0.5, duration/2)
 	startTime = time
-	endTime = time + duration
-	while time < endTime
+	elapsed = 0
+	while elapsed < duration
 		headT = mathUtil.min(1, (time - startTime) / (duration - delay))
 		tailT = mathUtil.max(0, (time - delay - startTime) / (duration - delay))
 		headPos = mathUtil.lerp2d(fromPos, toPos, headT)
 		tailPos = mathUtil.lerp2d(fromPos, toPos, tailT)
 		underlayGfx.line headPos[0], headPos[1], tailPos[0], tailPos[1], "#FFFFCC"
+		if @frameCallback != null then frameCallback elapsed, duration
 		yield
 		underlayGfx.line headPos[0], headPos[1], tailPos[0], tailPos[1], color.clear
+		elapsed = time - startTime
 	end while
 	
 end function

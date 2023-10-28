@@ -17,6 +17,7 @@ ensureImport "fleet"
 ensureImport "empire"
 ensureImport "events"
 ensureImport "dialogs"
+ensureImport "planetView"
 
 // Initialize the game
 planets = []
@@ -32,6 +33,7 @@ mouseUpTime = 0
 mouseOverPlanet = null
 targetPlanet = planets[0]
 fleet.planet = planets[0]
+planetView.prepare
 
 empire.updateTotals
 
@@ -55,7 +57,10 @@ tryWarpToTarget = function
 	if targetPlanet == fleet.planet then return
 	if not fleet.canReach(targetPlanet) then return
 	// WARP!!!
-	galaxyMap.animateWarp fleet.planet, targetPlanet
+	planetView.animateDeparture
+	galaxyMap.animateWarp fleet.planet, targetPlanet, @planetView.drawWarpFrame
+	planetView.animateArrival
+	
 	dist = fleet.planet.distanceTo(targetPlanet)
 	oldPlanet = fleet.planet
 	fleet.makeTrip targetPlanet

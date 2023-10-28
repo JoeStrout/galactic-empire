@@ -8,6 +8,7 @@ ensureImport "fleet"
 ensureImport "empire"
 ensureImport "resources"
 ensureImport "buttons"
+ensureImport "planetView"
 
 g = gfx
 numToStr = @mathUtil.numToStr
@@ -204,34 +205,7 @@ drawShips = function(left, bottom, width, height, pic, count)
 end function
 
 drawPlanetView = function
-	top = 640 - 80 - 150 + 1
-	bottom = 260
-	height = top - bottom
-	width = 400
-	left = 960-width
-	g.fillRect left, bottom, width, height, color.black
-	
-	// draw stars and planet
-	for i in range(200)
-		c = color.rgb(100+155*rnd, 100+155*rnd, 100+155*rnd)
-		gfx.setPixel left + width*rnd, bottom + height*rnd, c
-	end for
-	p = resources.pics.planet
-	g.drawImage p, 959-p.width, bottom+1
-	
-	// draw fleet ship icons
-//	y = top - 20
-//	y -= drawIcons(left+8, y, width-16, resources.pics.transportIcon, fleet.mannedTransports)
-//	y -= drawIcons(left+8, y, width-16, resources.pics.transportIconEmpty, fleet.emptyTransports)
-//	y -= drawIcons(left+8, y, width-16, resources.pics.fighterIcon, fleet.fighters)
-//	// ToDo: draw satellites, supply ships, and fuel ships too!
-	
-//	drawShips left+8, bottom, width-60, height, resources.pics.transportEmpty, ceil(fleet.emptyTransports/10)
-//	drawShips left+8, bottom, width-60, height, resources.pics.transport, ceil(fleet.mannedTransports/10)
-	
-	
-	g.drawRect left, bottom, width, height, "#888888"
-
+	planetView.draw
 end function
 
 targetButtons = {}
