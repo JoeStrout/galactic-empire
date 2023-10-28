@@ -37,8 +37,9 @@ end function
 
 makeTrip = function(target)
 	dist = planet.distanceTo(target)
-	outer.fuel -= fuelCost(dist)
-	outer.supplies -= supplyCost(dist)
+print "fleet.makeTrip hacked"
+//	outer.fuel -= fuelCost(dist)
+//	outer.supplies -= supplyCost(dist)
 	outer.planet = target
 end function
 

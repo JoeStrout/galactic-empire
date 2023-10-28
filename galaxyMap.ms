@@ -1,3 +1,5 @@
+import "importUtil"
+ensureImport "sounds"
 
 left = 0
 bottom = 0
@@ -39,6 +41,30 @@ drawUnderlay = function
 			underlayGfx.line p0[0], p0[1], p.position.x, p.position.y, "#CCCCCC"
 		end for
 	end for
+end function
+
+animateWarp = function(fromPlanet, toPlanet)
+	duration = mathUtil.max(0.5, fromPlanet.distanceTo(toPlanet) / 20)
+	fromPos = fromPlanet.position
+	toPos = toPlanet.position
+	
+	sounds.warp(duration).play
+	
+	// Animate a line where the head reaches the target half a second
+	// or so early, and the tail leaves the source by the same delay.
+	delay = mathUtil.min(0.5, duration/2)
+	startTime = time
+	endTime = time + duration
+	while time < endTime
+		headT = mathUtil.min(1, (time - startTime) / (duration - delay))
+		tailT = mathUtil.max(0, (time - delay - startTime) / (duration - delay))
+		headPos = mathUtil.lerp2d(fromPos, toPos, headT)
+		tailPos = mathUtil.lerp2d(fromPos, toPos, tailT)
+		underlayGfx.line headPos[0], headPos[1], tailPos[0], tailPos[1], "#FFFFCC"
+		yield
+		underlayGfx.line headPos[0], headPos[1], tailPos[0], tailPos[1], color.clear
+	end while
+	
 end function
 
 drawStars = function

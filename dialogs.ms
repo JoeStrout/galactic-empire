@@ -519,7 +519,8 @@ BuildDialog.run = function
 		if key.available then
 			k = key.get
 			if k == char(27) then break
-			if k == char(10) or k == char(3) or k == char(13) then self.apply
+			if (k == char(10) or k == char(3) or k == char(13)) and
+				self.okButton.isEnabled then self.apply
 			if k == " " or k == "*" or k == "?" or k == "/" then self.autoMax
 			InputField.handleKeyAll k
 		end if		

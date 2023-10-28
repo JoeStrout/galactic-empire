@@ -77,6 +77,8 @@ Button.enable = function(enableIt = true)
 	end if
 end function
 
+Button.isEnabled = function; return self.state != "DISABLED"; end function
+
 Button.onEnterState = function(newState)
 	if newState == "HOVER" then
 		self.tint = self.highlightColor

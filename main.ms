@@ -55,6 +55,7 @@ tryWarpToTarget = function
 	if targetPlanet == fleet.planet then return
 	if not fleet.canReach(targetPlanet) then return
 	// WARP!!!
+	galaxyMap.animateWarp fleet.planet, targetPlanet
 	dist = fleet.planet.distanceTo(targetPlanet)
 	oldPlanet = fleet.planet
 	fleet.makeTrip targetPlanet
