@@ -6,6 +6,8 @@ ensureImport "bmfFonts"
 ensureImport "textUtil"
 ensureImport "gameRules"
 ensureImport "buttons"
+ensureImport "empire"
+ensureImport "fleet"
 
 if not globals.hasIndex("bigFont") then
 	globals.bigFont = bmfFonts.Font.load("/sys/fonts/minimicro-pro-16.bmf")
@@ -135,6 +137,7 @@ InputField.closeAll = function
 	for i in range(InputField.instances.len-1, 0, -1)
 		InputField.instances[i].close
 	end for
+	InputField.focusedField = null
 end function
 
 InputField.handleClickAll = function
@@ -223,6 +226,7 @@ Dialog.bottom = function; return self.midY - self.height/2; end function
 Dialog.top = function; return self.midY + self.height/2; end function
 Dialog.title = ""
 Dialog.done = false
+
 Dialog.draw = function
 	disp.clear surroundTint
 	disp.fillRect self.left, self.bottom, self.width, self.height, backColor
@@ -233,7 +237,9 @@ Dialog.draw = function
 	self.drawContent
 	globals.gfx = oldGfx
 end function
+
 Dialog.drawContent = null
+
 Dialog.wait = function(delay=1)
 	// Wait... but let the user dismiss by pressing Esc, Space, Enter, or Return.
 	endTime = time + delay
@@ -248,9 +254,13 @@ Dialog.wait = function(delay=1)
 		mouseWasDown = mouse.button
 	end while
 end function
+
+Dialog.auotMax = null
+
 Dialog.apply = function
 	self.done = true
 end function
+
 Dialog.addOKCancelButtons = function
 	dialog = self
 	self.okButton = buttons.addButton(self.midX + 20, self.bottom + 20, 100, "OK")
@@ -258,6 +268,7 @@ Dialog.addOKCancelButtons = function
 	self.cancelButton = buttons.addButton(self.midX - 20 - 100, self.bottom + 20, 100, "Cancel")
 	self.cancelButton.action = function; dialog.done = true; end function
 end function
+
 Dialog.doEvents = function
 	events.eventLoop.mouseWasDown = false
 	events.eventLoop.running = true
@@ -277,6 +288,13 @@ Dialog.doEvents = function
 	end while
 end function
 
+Dialog.close = function
+	disp.clear
+	InputField.closeAll
+	display(2).clear	// (SpriteDisplay used for dialog buttons)
+	text.clear
+	text.color = color.orange
+end function
 
 MsgDialog = new Dialog
 MsgDialog.width = 300
@@ -294,19 +312,24 @@ MsgDialog.show = function(message, title="")
 	dlog.message = message
 	dlog.draw
 	self.wait 4
-	clear
+	self.close
 end function
 
 // Cryonics dialog: advances time for some number of years without doing
 // any other action.
 CryonicsDialog = new Dialog
-CryonicsDialog.done = false
 
 CryonicsDialog.apply = function
-	self.done = true
+	super.apply
 	for i in range(1, InputField.instances[0].text.val)
 		advanceTime 1
 	end for
+end function
+
+CryonicsDialog.autoMax = function
+	fld = InputField.instances[0]
+	fld.text = "25"
+	fld.draw
 end function
 
 CryonicsDialog.run = function
@@ -332,9 +355,7 @@ CryonicsDialog.run = function
 	self.addOKCancelButtons
 	self.doEvents
 	
-	disp.clear
-	InputField.closeAll
-	events.spriteDisplay.clear
+	self.close
 	globals.gfx = oldGfx
 	events.spriteDisplay = oldSpriteDisp
 end function
@@ -432,11 +453,8 @@ BattleDialog.run = function
 	end if
 	self.wait 1.5
 	
+	self.close
 	globals.gfx = oldGfx
-	clear
-	disp.clear
-	text.clear
-	text.color = color.orange
 end function
 
 // Build dialog: select how many ships you want to build, and build 'em.
@@ -582,9 +600,74 @@ BuildDialog.run = function
 
 	self.doEvents
 	
-	disp.clear
-	InputField.closeAll
-	events.spriteDisplay.clear
+	self.close
+	globals.gfx = oldGfx
+	events.spriteDisplay = oldSpriteDisp
+end function
+
+ScrapDialog = new Dialog
+ScrapDialog.typeNames = ["Fighters", "Empty Transports", "Manned Transports", "Spy Satellites",
+		"Supply Ships", "Fuel Ships"]
+ScrapDialog.typeKeys = "fighters emptyTransports mannedTransports satellites supplyShips fuelShips".split
+
+ScrapDialog.autoMax = function
+	idx = self.qtyFields.indexOf(InputField.focusedField)
+	if idx < 0 then return
+	maxQty = fleet[self.typeKeys[idx]]
+	self.qtyFields[idx].text = str(maxQty)
+	self.qtyFields[idx].draw
+end function
+
+ScrapDialog.validate = function
+	isValid = true
+	for i in self.qtyFields.indexes
+		maxQty = fleet[self.typeKeys[i]]
+		if self.qtyFields[i].text.val > maxQty then isValid = false
+	end for
+	self.okButton.enable isValid
+	return isValid
+end function
+
+ScrapDialog.apply = function
+	if not self.validate then return
+	for i in self.qtyFields.indexes
+		qty = self.qtyFields[i].text.val
+		fleet[self.typeKeys[i]] -= qty
+	end for
+	super.apply
+end function
+
+ScrapDialog.run = function
+	self.width = 440
+	self.height = 332
+	self.title = "Scrap Ships"
+	super.draw
+
+	oldGfx = gfx; globals.gfx = disp
+	oldSpriteDisp = events.spriteDisplay; events.spriteDisplay = display(2)
+	dialog = self
+
+	bigFont.print "Scrap how many ships?", self.left+20, self.top - 30, 1, textColor
+	
+	self.qtyFields = []
+	x = self.left + 230
+	y = self.top - 60
+	for i in self.typeNames.indexes
+		bigFont.printRight self.typeNames[i] + ":", x-12, y, 1, textColor
+		fld = InputField.make(x, y-8, 80, 28, "0")
+		self.qtyFields.push fld
+		if i == 0 then fld.select else fld.draw
+		qty = fleet[self.typeKeys[i]]
+		bigFont.print "(0 - " + qty + ")", x + 88, y, 1, textColor
+		fld.maxQty = qty
+		fld.onTextChange = function; dialog.validate; end function
+		y -= 40
+	end for
+
+	self.addOKCancelButtons
+	self.doEvents
+	
+	self.close
 	globals.gfx = oldGfx
 	events.spriteDisplay = oldSpriteDisp
 end function
@@ -624,8 +707,12 @@ if locals == globals then
 		bd = new BuildDialog
 		bd.run
 	end if
-	if true then
+	if false then
 		d = new CryonicsDialog
+		d.run
+	end if
+	if true then
+		d = new ScrapDialog
 		d.run
 	end if
 end if

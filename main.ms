@@ -93,7 +93,9 @@ cryosleep = function
 end function
 
 scrapShips = function
-	dialogs.MsgDialog.show "Not implemented yet.", "Scrap Ships"
+	d = new dialogs.ScrapDialog
+	d.run
+	infoDisplay.drawAll
 end function
 
 attack = function
