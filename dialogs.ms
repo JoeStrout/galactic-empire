@@ -222,6 +222,7 @@ Dialog.right = function; return self.midX + self.width/2; end function
 Dialog.bottom = function; return self.midY - self.height/2; end function
 Dialog.top = function; return self.midY + self.height/2; end function
 Dialog.title = ""
+Dialog.done = false
 Dialog.draw = function
 	disp.clear surroundTint
 	disp.fillRect self.left, self.bottom, self.width, self.height, backColor
@@ -247,6 +248,35 @@ Dialog.wait = function(delay=1)
 		mouseWasDown = mouse.button
 	end while
 end function
+Dialog.apply = function
+	self.done = true
+end function
+Dialog.addOKCancelButtons = function
+	dialog = self
+	self.okButton = buttons.addButton(self.midX + 20, self.bottom + 20, 100, "OK")
+	self.okButton.action = function; dialog.apply; end function
+	self.cancelButton = buttons.addButton(self.midX - 20 - 100, self.bottom + 20, 100, "Cancel")
+	self.cancelButton.action = function; dialog.done = true; end function
+end function
+Dialog.doEvents = function
+	events.eventLoop.mouseWasDown = false
+	events.eventLoop.running = true
+	
+	while not self.done
+		yield
+		if mouse.button then InputField.handleClickAll
+		if key.available then
+			k = key.get
+			if k == char(27) then break
+			if (k == char(10) or k == char(3) or k == char(13)) and
+				self.okButton.isEnabled then self.apply
+			if k == " " or k == "*" or k == "?" or k == "/" then self.autoMax
+			InputField.handleKeyAll k
+		end if		
+		events.eventLoop.update
+	end while
+end function
+
 
 MsgDialog = new Dialog
 MsgDialog.width = 300
@@ -265,6 +295,48 @@ MsgDialog.show = function(message, title="")
 	dlog.draw
 	self.wait 4
 	clear
+end function
+
+// Cryonics dialog: advances time for some number of years without doing
+// any other action.
+CryonicsDialog = new Dialog
+CryonicsDialog.done = false
+
+CryonicsDialog.apply = function
+	self.done = true
+	for i in range(1, InputField.instances[0].text.val)
+		advanceTime 1
+	end for
+end function
+
+CryonicsDialog.run = function
+	self.width = 420
+	self.height = 150
+	self.title = "Cryonics"
+	super.draw
+	oldGfx = gfx; globals.gfx = disp
+	oldSpriteDisp = events.spriteDisplay; events.spriteDisplay = display(2)
+	dialog = self
+
+	bigFont.print "Put fleet into stasis for", self.left+20, self.top-30, 1, textColor
+	bigFont.print "how many years (1 - 25)?", self.left+20, self.top-30-24, 1, textColor
+
+	fld = InputField.make(self.right - 100, self.top-50, 80, 28)
+	fld.text = "5"
+	fld.onTextChange = function
+		dialog.okButton.enable 1 <= self.text.val <= 25
+	end function
+	fld.draw
+	fld.select
+	
+	self.addOKCancelButtons
+	self.doEvents
+	
+	disp.clear
+	InputField.closeAll
+	events.spriteDisplay.clear
+	globals.gfx = oldGfx
+	events.spriteDisplay = oldSpriteDisp
 end function
 
 // Class representing the battle dialog.
@@ -325,6 +397,7 @@ BattleDialog.run = function
 		self.wait
 	
 		while self.spaceForces[0] > 0 and self.spaceForces[1] > 0
+			// ToDo: sometimes the space battle takes out a manned transport, too!
 			gameRules.doSpaceCombat planets, self.spaceForces
 			textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.spaceForces[0])
 			textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.spaceForces[1])
@@ -408,7 +481,8 @@ BuildDialog.setup = function
 		dialog = self
 		fld.onTextChange = function; dialog.updateTotals; end function
 		fld.draw
-		self.qtyFields.push fld		
+		self.qtyFields.push fld
+		if i == 0 then fld.select
 		bigFont.printRight self.partCosts[i], x0 + dx*2, y, 1, self.partColor
 		bigFont.printRight self.creditCosts[i], x0 + dx*3, y, 1, self.creditColor
 		bigFont.printRight self.partCosts[i]*0, x0 + dx*4, y, 1, self.partColor
@@ -427,12 +501,8 @@ BuildDialog.setup = function
 	bigFont.printRight s + ":", x0 + dx*3, y, 1, textColor
 	bigFont.printRight self.availableParts, x0 + dx*4, y, 1, self.partColor
 	bigFont.printRight empire.credits, x0 + dx*5, y, 1, self.creditColor		
-	
-	self.done = false
-	self.okButton = buttons.addButton(self.midX + 20, self.bottom + 20, 100, "OK")
-	self.okButton.action = function; dialog.apply; end function
-	self.cancelButton = buttons.addButton(self.midX - 20 - 100, self.bottom + 20, 100, "Cancel")
-	self.cancelButton.action = function; dialog.done = true; end function
+
+	self.addOKCancelButtons	
 end function
 
 BuildDialog.updateTotals = function
@@ -509,23 +579,8 @@ BuildDialog.run = function
 	if self.qtyFields[0] == self.qtyFields[2] then exit
 	
 	self.updateTotals
-	
-	events.eventLoop.mouseWasDown = false
-	events.eventLoop.running = true
-	
-	while not self.done
-		yield
-		if mouse.button then InputField.handleClickAll
-		if key.available then
-			k = key.get
-			if k == char(27) then break
-			if (k == char(10) or k == char(3) or k == char(13)) and
-				self.okButton.isEnabled then self.apply
-			if k == " " or k == "*" or k == "?" or k == "/" then self.autoMax
-			InputField.handleKeyAll k
-		end if		
-		events.eventLoop.update
-	end while
+
+	self.doEvents
 	
 	disp.clear
 	InputField.closeAll
@@ -565,8 +620,12 @@ if locals == globals then
 		end while
 		InputField.closeAll
 	end if
-	if true then
+	if false then
 		bd = new BuildDialog
 		bd.run
+	end if
+	if true then
+		d = new CryonicsDialog
+		d.run
 	end if
 end if

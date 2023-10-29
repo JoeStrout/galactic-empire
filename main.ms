@@ -87,7 +87,9 @@ sendSpySats = function
 end function
 
 cryosleep = function
-	dialogs.MsgDialog.show "Not implemented yet.", "Cryonics"
+	d = new dialogs.CryonicsDialog
+	d.run
+	infoDisplay.drawAll
 end function
 
 scrapShips = function
