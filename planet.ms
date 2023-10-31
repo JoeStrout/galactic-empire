@@ -107,7 +107,7 @@ end function
 
 Planet.advanceTime = function(years)
 	// grow population
-	growthRate = 1.01	// ToDo: vary this based on allocations, etc.
+	growthRate = 1.001	// ToDo: vary this based on allocations, etc.
 	self.population *= growthRate^years
 	
 	// produce resources
