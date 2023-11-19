@@ -360,6 +360,64 @@ CryonicsDialog.run = function
 	events.spriteDisplay = oldSpriteDisp
 end function
 
+// Game-over dialog
+GameOverDialog = new Dialog
+GameOverDialog.won = false			// configure this stuff before calling run
+GameOverDialog.run = function
+	self.width = 960
+	self.height = 600
+	self.midY = 310
+	self.title = "Game " + "Won" * self.won + "Lost" * (not self.won)
+	super.draw
+	oldGfx = gfx; globals.gfx = disp
+	oldSpriteDisp = events.spriteDisplay; events.spriteDisplay = display(2)
+	dialog = self
+	
+	fields = []
+	fields.push ["Year", str(empire.year)]
+	if self.won then
+		p = resources.pics.gameWonScene
+		text = [
+			"You have united the galaxy, ushering in",
+			"a new era of peace and prosperity under",
+			"the benign rule of the Galactic Empire!"]
+		fields.push ["Population", str(
+		  empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED]) + "M"]
+		fields.push ["Credits", str(empire.credits)]
+	else
+		p = resources.pics.gameLostScene
+		text = [
+			"You failed to unite the galaxy before your body",
+			"failed you.  Now it is too late; humanity is",
+			"doomed to an eternity of barbarism and decay."]
+		fields.push ["Planets", str(
+		  empire.counts[planet.EMPIRE] + empire.counts[planet.OCCUPIED]) + 
+		  "/" + empire.counts[planet.INDEPENDENT]]
+		fields.push ["Population", str(
+		  empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED]) + "M" +
+		  "/" + empire.totalPop[planet.INDEPENDENT] + "M"]		
+	end if
+	
+	gfx.drawImage p, self.midX - p.width/2, self.top - p.height
+	y = self.top - p.height - 60
+	for line in text
+		bigFont.printCentered line, 480, y, 1, textColor
+		y -= round(bigFont.lineHeight * 1.2)
+	end for
+	y -= 40
+	for fld in fields
+		bigFont.printRight fld[0], 480-8, y, 1, textColor
+		bigFont.print fld[1], 480+8, y, 1, textColor
+		y -= round(bigFont.lineHeight * 1.2)
+	end for
+
+	self.doEvents	
+	self.close
+	globals.gfx = oldGfx
+	events.spriteDisplay = oldSpriteDisp
+end function
+	
+
 // Class representing the battle dialog.
 BattleDialog = new Dialog
 BattleDialog.sides = ["Empire", "Defender"]
@@ -711,8 +769,13 @@ if locals == globals then
 		d = new CryonicsDialog
 		d.run
 	end if
-	if true then
+	if false then
 		d = new ScrapDialog
 		d.run
+	end if
+	if true then
+		d = new GameOverDialog
+		d.won = (key.pressed("left shift") or key.pressed("right shift"))
+		d.run 
 	end if
 end if
