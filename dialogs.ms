@@ -178,7 +178,7 @@ InputField.handleKeyAll = function(keyChar)
 		fld.draw
 		fld.onTextChange
 	else
-		//print "Unknown char: " + keyChar.code
+		print "Unknown char: " + keyChar.code
 	end if
 end function
 
@@ -320,8 +320,10 @@ end function
 CryonicsDialog = new Dialog
 
 CryonicsDialog.apply = function
+	years = InputField.instances[0].text.val
 	super.apply
-	for i in range(1, InputField.instances[0].text.val)
+	self.close
+	for i in range(1, years)
 		advanceTime 1
 	end for
 end function
@@ -375,11 +377,11 @@ GameOverDialog.run = function
 	dialog = self
 	
 	fields = []
-	fields.push ["Year", str(empire.year)]
-	ourPlanets = empire.counts[planet.EMPIRE] + empire.counts[planet.OCCUPIED]
-	totalPlanets = ourPlanets + empire.counts[planet.INDEPENDENT]
-	ourPop = empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED]
-	totalPop = ourPop + empire.totalPop[planet.INDEPENDENT]
+	fields.push ["Year", str(round(empire.year))]
+	ourPlanets = round(empire.counts[planet.EMPIRE] + empire.counts[planet.OCCUPIED])
+	totalPlanets = round(ourPlanets + empire.counts[planet.INDEPENDENT])
+	ourPop = round(empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED])
+	totalPop = round(ourPop + empire.totalPop[planet.INDEPENDENT])
 	
 	if self.won then
 		p = resources.pics.gameWonScene
@@ -434,7 +436,7 @@ GameOverDialog.run = function
 	cleanup
 	reset
 	load "main"
-	clear
+	globals.clear
 	print
 	_printMark "To play again, enter: `run`"
 	_printMark "For general Mini Micro help, enter: `help`"

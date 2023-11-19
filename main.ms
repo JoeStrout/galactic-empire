@@ -50,7 +50,19 @@ advanceTime = function(years)
 	for p in planets
 		p.advanceTime years
 	end for
+	empire.updateTotals
 	galaxyMap.drawUnderlay
+	if empire.counts[planet.INDEPENDENT] == 0 then
+		gameOver = new dialogs.GameOverDialog
+		gameOver.won = true
+		gameOver.run
+		exit
+	else if empire.year >= 1200 then
+		gameOver = new dialogs.GameOverDialog
+		gameOver.won = false
+		gameOver.run
+		exit
+	end if
 end function
 
 tryWarpToTarget = function
