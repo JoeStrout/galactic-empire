@@ -330,6 +330,7 @@ CryonicsDialog.autoMax = function
 	fld = InputField.instances[0]
 	fld.text = "25"
 	fld.draw
+	fld.onTextChange
 end function
 
 CryonicsDialog.run = function
@@ -347,7 +348,7 @@ CryonicsDialog.run = function
 	fld = InputField.make(self.right - 100, self.top-50, 80, 28)
 	fld.text = "5"
 	fld.onTextChange = function
-		dialog.okButton.enable 1 <= self.text.val <= 25
+		dialog.okButton.enable 1 <= self.text.val <= 25 or key.pressed("right shift")
 	end function
 	fld.draw
 	fld.select
@@ -375,14 +376,18 @@ GameOverDialog.run = function
 	
 	fields = []
 	fields.push ["Year", str(empire.year)]
+	ourPlanets = empire.counts[planet.EMPIRE] + empire.counts[planet.OCCUPIED]
+	totalPlanets = ourPlanets + empire.counts[planet.INDEPENDENT]
+	ourPop = empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED]
+	totalPop = ourPop + empire.totalPop[planet.INDEPENDENT]
+	
 	if self.won then
 		p = resources.pics.gameWonScene
 		text = [
 			"You have united the galaxy, ushering in",
 			"a new era of peace and prosperity under",
 			"the benign rule of the Galactic Empire!"]
-		fields.push ["Population", str(
-		  empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED]) + "M"]
+		fields.push ["Population", ourPop + "M"]
 		fields.push ["Credits", str(empire.credits)]
 	else
 		p = resources.pics.gameLostScene
@@ -390,12 +395,8 @@ GameOverDialog.run = function
 			"You failed to unite the galaxy before your body",
 			"failed you.  Now it is too late; humanity is",
 			"doomed to an eternity of barbarism and decay."]
-		fields.push ["Planets", str(
-		  empire.counts[planet.EMPIRE] + empire.counts[planet.OCCUPIED]) + 
-		  "/" + empire.counts[planet.INDEPENDENT]]
-		fields.push ["Population", str(
-		  empire.totalPop[planet.EMPIRE] + empire.totalPop[planet.OCCUPIED]) + "M" +
-		  "/" + empire.totalPop[planet.INDEPENDENT] + "M"]		
+		fields.push ["Planets", ourPlanets + " / " + totalPlanets]
+		fields.push ["Population",ourPop + "M / " + totalPop + "M"]
 	end if
 	
 	gfx.drawImage p, self.midX - p.width/2, self.top - p.height
@@ -411,10 +412,32 @@ GameOverDialog.run = function
 		y -= round(bigFont.lineHeight * 1.2)
 	end for
 
+	cleanup = function
+		dialog.close
+		globals.gfx = oldGfx
+		events.spriteDisplay = oldSpriteDisp
+	end function
+
+	self.playButton = buttons.addButton(self.midX + 20, self.bottom + 20, 140, "Play Again")
+	self.playButton.action = function
+		cleanup
+		reset
+		load "main"
+		run
+	end function
+	self.quitButton = buttons.addButton(self.midX - 20 - 140, self.bottom + 20, 140, "Quit")
+	self.quitButton.action = function
+		dialog.done = true
+	end function
+
 	self.doEvents	
-	self.close
-	globals.gfx = oldGfx
-	events.spriteDisplay = oldSpriteDisp
+	cleanup
+	reset
+	load "main"
+	clear
+	print
+	_printMark "To play again, enter: `run`"
+	_printMark "For general Mini Micro help, enter: `help`"
 end function
 	
 
