@@ -1,6 +1,6 @@
 # Quick Start
 
-See the [README](../README.md) for installation and set-up instructions.  Also see the [backstory.md](backstory) if interested.
+See the [README](../README.md) for installation and set-up instructions.  Also see the [backstory](backstory.md) if interested.
 
 Once you have the game running in [Mini Micro](https://miniscript.org/MiniMicro), you should see a screen somewhat like the following.
 
