@@ -488,10 +488,9 @@ BattleDialog.run = function
 	y -= 24
 	
 	bigFont.print "Ships Left:", self.left + 8, y, 1, textColor
-	
+		
 	text.color = color.yellow
 	row = textUtil.textRow(y + 4)
-
 	planets = [globals.planets[0], fleet.planet]
 	if self.spaceForces[1] > 0 then
 		bigFont.printCentered "Space Battle", self.midX, self.top - 24, 1, textColor
@@ -500,9 +499,17 @@ BattleDialog.run = function
 		textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.spaceForces[1])
 		self.wait
 	
+		boom = new Sound
+		boom.init 0.2, [2000,200], [1,0]	// (really more of a "pew")
+		lastBoomTime = 0
+		
 		while self.spaceForces[0] > 0 and self.spaceForces[1] > 0
 			// ToDo: sometimes the space battle takes out a manned transport, too!
-			gameRules.doSpaceCombat planets, self.spaceForces
+			winner = gameRules.doSpaceCombat(planets, self.spaceForces)
+			if time - lastBoomTime > 0.25 and (lastBoomTime == 0 or rnd < 0.06) then
+				boom.play 0.5+0.4*rnd, 0.5 - winner, 1.1 - 0.4*winner
+				lastBoomTime = time
+			end if
 			textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.spaceForces[0])
 			textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.spaceForces[1])
 			yield
@@ -520,8 +527,15 @@ BattleDialog.run = function
 		textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.groundForces[1])
 		self.wait
 	
+		boom = file.loadSound("/sys/sounds/airburst.wav")	
+		lastBoomTime = 0
+	
 		while self.groundForces[0] > 0 and self.groundForces[1] > 0
-			gameRules.doLandCombat planets, self.groundForces
+			winner = gameRules.doLandCombat(planets, self.groundForces)
+			if time - lastBoomTime > 0.5 and (lastBoomTime == 0 or rnd < 0.02) then
+				boom.play 0.5+0.4*rnd, 0.5 - winner, 1.1 - 0.2*winner
+				lastBoomTime = time
+			end if
 			textUtil.printAt textUtil.textCol(x0)-2, row, cpad(self.groundForces[0])
 			textUtil.printAt textUtil.textCol(x1)-2, row, cpad(self.groundForces[1])
 			yield
@@ -756,7 +770,9 @@ ScrapDialog.run = function
 end function
 
 if locals == globals then
-	if false then
+	if true then
+		planets = [Planet.makeGalactica]
+		fleet.planet = Planet.makeRandom
 		bd = new BattleDialog
 		bd.spaceForces = [200, 124]
 		bd.groundForces = [180, 120]
@@ -798,7 +814,7 @@ if locals == globals then
 		d = new ScrapDialog
 		d.run
 	end if
-	if true then
+	if false then
 		d = new GameOverDialog
 		d.won = (key.pressed("left shift") or key.pressed("right shift"))
 		d.run 

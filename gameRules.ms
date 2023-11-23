@@ -4,6 +4,7 @@
 
 // Do 1 round of combat between space forces.  After this call,
 // one (or both) of the given space forces will be slightly reduced.
+// Return index of which side won.
 //	planets: list of combatant planets (use Galactica for the empire side)
 //	spaceForces: list of integers, how many fighters are on each side
 doSpaceCombat = function(planets, spaceForces)
@@ -13,22 +14,18 @@ doSpaceCombat = function(planets, spaceForces)
 	// 4 tech levels, so worst case a difference of 3 means the
 	// probability will be 0.05 or 0.95.
 	p = 0.5 + 0.15 * (planets[0].tech - planets[1].tech)
-	if rnd < p then	// side 0 wins
-		spaceForces[1] -= 1
-	else			// side 1 wins
-		spaceForces[0] -= 1
-	end if
+	winner = (rnd < p)
+	spaceForces[1 - winner] -= 1
+	return winner
 end function
 
 // Same as above, but for land forces.
 // (Less advantage for tech here since even primitive forces can dig in.)
 doLandCombat = function(planets, landForces)
 	p = 0.5 + 0.1 * (planets[0].tech - planets[1].tech)
-	if rnd < p then	// side 0 wins
-		landForces[1] -= 1
-	else			// side 1 wins
-		landForces[0] -= 1
-	end if
+	winner = (rnd < p)
+	landForces[1 - winner] -= 1
+	return winner
 end function
 
 // Return how many fighters this planet will build if left alone.

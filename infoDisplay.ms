@@ -249,7 +249,7 @@ end function
 drawAllocations = function
 	p = targetPlanet
 	isOurs = (p.status == planet.EMPIRE)
-	known = (p.satellites > 1)
+	known = (p.satellites > 1 or isOurs or p == fleet.planet)
 	y = allocTop
 	lineHeight = 16
 	allocWidth = allocRight - allocLeft
@@ -258,8 +258,9 @@ drawAllocations = function
 	for res in p.resources
 		gfx.fillRect allocLeft, y-lineHeight, allocWidth + 70, lineHeight, color.black
 		c = infoColor
-		if p.satellites > 0 and ((res.name == "Industry" and not p.hasIndustry) or
-		   (res.name == "Mining" and not p.hasFuel)) then
+		if (p.satellites > 0 or isOurs) and 
+		   ((res.name == "Industry" and not p.hasIndustry) or
+		    (res.name == "Mining" and not p.hasFuel)) then
 			c = color.gray
 			font.print "N/A", allocLeft, y-10, 1, c
 		else if known then
@@ -308,7 +309,7 @@ handleClick = function
 end function
 
 ifSats = function(statIfKnown, satsRequired)
-	if targetPlanet.satellites < satsRequired then return "Unknown"
+	if targetPlanet.satellites < satsRequired and targetPlanet != fleet.planet then return "Unknown"
 	return str(statIfKnown)
 end function
 
@@ -353,6 +354,7 @@ drawTargetInfo = function
 	drawLabeledField leftColLeft, y, colWidth, "Status", s
 	
 	sats = p.satellites
+	if isLocal then sats = 3	// (unlike original: fleet presence equivalent to full spy sats)
 	if sats == 0 then
 		s = "Unknown"
 	else if sats == 1 then
@@ -385,7 +387,7 @@ drawTargetInfo = function
 	outer.allocRight = x2 - 40
 	for res in p.resources
 		c = infoColor
-		if p.satellites > 0 and ((res.name == "Industry" and not p.hasIndustry) or
+		if sats > 0 and ((res.name == "Industry" and not p.hasIndustry) or
 		   (res.name == "Mining" and not p.hasFuel)) then c = color.gray
 		font.printRight res.name, x0, y-10, 1, c
 		//font.print round(res.allocation) + "%", x1, y-10, 1, c
