@@ -2,6 +2,8 @@
 
 This project is an open-source recreation/extension of a classic Mac shareware game (also called Galactic Empire) by Cary Torkelson.  See _Playing the Original_ below for more information on that.
 
+![Screenshot of Galactic Empire in Mini Micro](docs/Screenshot.png)
+
 # Playing the Game
 
 This is a project for [Mini Micro](https://miniscript.org/MiniMicro).  You can try it out with these steps:

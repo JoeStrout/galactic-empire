@@ -30,9 +30,12 @@ titleColor = "#FFFF00"
 textColor = "#8888FF"
 surroundTint = "#00000044"
 
+current = null	// current Dialog instance on screen, if any
+
 clear = function
 	disp.clear
 	text.clear
+	outer.current = null
 end function
 
 rpad = function(value, spaces=5)
@@ -178,7 +181,7 @@ InputField.handleKeyAll = function(keyChar)
 		fld.draw
 		fld.onTextChange
 	else
-		print "Unknown char: " + keyChar.code
+//		print "Unknown char: " + keyChar.code
 	end if
 end function
 
@@ -236,6 +239,7 @@ Dialog.draw = function
 	bigFont.printCentered self.title, self.midX, self.top+4, 1, titleColor
 	self.drawContent
 	globals.gfx = oldGfx
+	outer.current = self
 end function
 
 Dialog.drawContent = null
@@ -294,6 +298,7 @@ Dialog.close = function
 	display(2).clear	// (SpriteDisplay used for dialog buttons)
 	text.clear
 	text.color = color.orange
+	outer.current = null
 end function
 
 MsgDialog = new Dialog
@@ -683,16 +688,14 @@ BuildDialog.apply = function
 	self.planet.shipParts.amount -= totalParts
 	empire.credits -= totalCredits
 	self.done = true
+	globals.wtf = self; print "set self.done=true"
 end function
 
 BuildDialog.run = function
 	oldGfx = gfx; globals.gfx = disp
 	oldSpriteDisp = events.spriteDisplay; events.spriteDisplay = display(2)
 
-	self.setup
-	
-	if self.qtyFields[0] == self.qtyFields[2] then exit
-	
+	self.setup	
 	self.updateTotals
 
 	self.doEvents

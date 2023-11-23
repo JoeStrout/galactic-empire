@@ -202,7 +202,7 @@ end function
 manTransports = function
 	if targetPlanet != fleet.planet or targetPlanet.status != planet.EMPIRE then return
 	// for now, just man up to 50 transports at a time
-	qty = [50, fleet.emptyTransports, targetPlanet.troops.amount].min
+	qty = floor([50, fleet.emptyTransports, targetPlanet.troops.amount].min)
 	if qty == 0 then return
 	fleet.emptyTransports -= qty
 	fleet.mannedTransports += qty
@@ -212,6 +212,7 @@ manTransports = function
 end function
 
 updateMap = function
+	if dialogs.current then return
 	p = galaxyMap.planetUnderMouse
 	if p != mouseOverPlanet then
 		if mouseOverPlanet then galaxyMap.drawPlanet mouseOverPlanet
