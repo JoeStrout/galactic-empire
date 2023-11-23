@@ -1,8 +1,8 @@
 # Quick Start
 
-See the [../README.md](README) for installation and set-up instructions.  Also see the [../reference/GE-Scroll.txt](backstory) if interested.
+See the [README](../README.md) for installation and set-up instructions.  Also see the [backstory](../reference/GE-Scroll.txt) if interested.
 
-Once you have the game running in [https://miniscript.org/MiniMicro](Mini Micro), you should see a screen somewhat like the following.
+Once you have the game running in [Mini Micro](https://miniscript.org/MiniMicro), you should see a screen somewhat like the following.
 
 ![Screenshot of Galactic Empire in Mini Micro](Screenshot.png)
 
