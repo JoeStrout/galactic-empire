@@ -20,6 +20,7 @@ load "main"
 run
 ```
 
+See the [instructions](docs/INSTRUCTIONS.md) for how to play.
 
 # Playing the Original
 
