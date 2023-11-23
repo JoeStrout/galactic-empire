@@ -1,0 +1,13 @@
+Thousands of years ago, humans reached for the stars and scattered across the universe.  In one small galaxy, twenty habitable planets were colonized.  For centuries these colonies prospered under the rule of the local capital, Galactica.
+
+Contact with the rest of the human Empire diminished over the years until a thousand years ago, when all contact abruptly stopped.  Scientists on the twenty planets searched for an explanation, but found none.  Without an explanation, the general populace feared the worst.  Over several hundred years, paranoid leaders were elected to power and eventually forbade any attempts at communication outside the galaxy, fearing whatever caused the rest of humanity to mysteriously disappear.  This reclusive policy led to the break down of commerce among the twenty planets and isolated each world.  The rapid decay of civilization followed.
+
+Presently, most planets have lost the sophisticated technology they once had.  Even Galactica, the old capital of the galaxy, has not been immune.  Some planets have become so primitive, they can no longer travel in space.  Those planets that still preserve their technology continue on in total isolation, never daring to contact the other worlds.  The standard of living on many planets is abysmal, and the human spirit fading.
+
+Having spent many years studying the decay of civilization in this galaxy, scientists on Galactica conclude that eventually all the planets will lose their advanced technology.  This isolation is jeopardizing the future of humanity.  Unfortunately, any attempts at discussion with the other planets in the galaxy are ignored or meet with hostility.
+
+Given the dire consequences of inaction, the people of Galactica have decided that if the other planets will not listen to reason, they will yield to force.  Galactica plans to forcefully reunite the twenty planets again.  It is strongly felt that once united, this galaxy can rebuild and begin growing.  They hope that humans will again travel to the stars...
+
+You have been selected to lead the effort to unite the twenty planets.  Using Galactica's resources, you must build a fleet capable of conquering the other worlds.  Once fully integrated into the Empire, you can call on the resources of the other planets to aid your cause.
+
+Time is limited; the decay continues even as you strive for unification.  You alone posses the unique blend of abilities needed to achieve this grand goal.  You are Galactica's only chance.  There will be no one to follow you.  Due to the aging distortions of space travel and cryogenic technology, you can live for 1200 years; 1200 short years to forcefully unite 20 planets and save humankind...

@@ -1,6 +1,6 @@
 # Quick Start
 
-See the [../README.md](README) for installation and set-up instructions.  Also see the [../reference/GE-Scroll.txt](backstory) if interested.
+See the [../README.md](README) for installation and set-up instructions.  Also see the [backstory.md](backstory) if interested.
 
 Once you have the game running in [https://miniscript.org/MiniMicro](Mini Micro), you should see a screen somewhat like the following.
 
