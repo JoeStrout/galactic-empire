@@ -236,6 +236,6 @@ galaxyMap.drawAll
 infoDisplay.drawAll
 
 events.eventLoop.onUpdate = @updateMap
-events.eventLoop.onKey["escape"] = @events.eventLoop.stop
+//events.eventLoop.onKey["escape"] = @events.eventLoop.stop
 events.eventLoop.run
 key.clear
